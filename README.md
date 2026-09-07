@@ -1,6 +1,6 @@
 # TED
 
-**Transform text to meaningful content.**
+Project TED - Transform Text to meaningful content
 
 ## About
 
