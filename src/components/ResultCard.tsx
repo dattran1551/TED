@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { RunOutput } from '@/types'
 
 const BRANCH_LABELS: Record<string, string> = {
@@ -23,6 +23,12 @@ export function ResultCard({
   const [editing, setEditing] = useState(false)
   const [editedText, setEditedText] = useState(output.editedContent ?? output.content ?? '')
 
+  useEffect(() => {
+    if (!editing) {
+      setEditedText(output.editedContent ?? output.content ?? '')
+    }
+  }, [output.content, output.editedContent, editing])
+
   return (
     <div className="result-card">
       <h3>{BRANCH_LABELS[output.branch] ?? output.branch}</h3>
@@ -31,7 +37,7 @@ export function ResultCard({
 
       {output.status === 'error' && (
         <div role="alert">
-          <p>Không tạo được bản này: {output.errorMessage}</p>
+          <p>Không tạo được bản này: {output.errorMessage ?? 'Lỗi không rõ.'}</p>
           <button onClick={() => onRegenerate('')}>Thử lại</button>
         </div>
       )}

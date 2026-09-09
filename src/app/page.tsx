@@ -84,10 +84,14 @@ export default function HomePage() {
         body: JSON.stringify({ outputId: output.id, editedContent }),
       })
       if (!res.ok) throw new Error('server_error')
-      setRun({
-        ...run,
-        outputs: run.outputs.map((o) => (o.id === output.id ? { ...o, editedContent } : o)),
-      })
+      setRun((prev) =>
+        prev
+          ? {
+              ...prev,
+              outputs: prev.outputs.map((o) => (o.id === output.id ? { ...o, editedContent } : o)),
+            }
+          : prev
+      )
     } catch {
       setActionError('Không lưu được bản sửa, thử lại sau.')
     }
@@ -127,7 +131,7 @@ export default function HomePage() {
       {blockedReason === 'empty' && <p role="alert">Nhập nội dung trước đã.</p>}
       {actionError && <p role="alert">{actionError}</p>}
 
-      <button onClick={handleSubmit} disabled={!validation.valid || submitting}>
+      <button onClick={handleSubmit} disabled={submitting}>
         {submitting ? 'Đang tạo...' : 'Tạo nội dung'}
       </button>
 
