@@ -1,7 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { BRANCH_LABELS } from '@/types'
 import type { Run } from '@/types'
+
+// SQLite lưu created_at bằng datetime('now'), tức giờ UTC nhưng KHÔNG kèm dấu
+// múi giờ (vd "2026-09-09 11:09:51"). Trình duyệt sẽ hiểu chuỗi đó là giờ địa
+// phương và hiện lệch đúng bằng chênh lệch múi giờ, nên phải nói rõ đây là UTC.
+function parseSqliteUtc(value: string): Date {
+  return new Date(value.replace(' ', 'T') + 'Z')
+}
 
 export default function HistoryPage() {
   const [runs, setRuns] = useState<Run[] | null>(null)
@@ -28,7 +37,7 @@ export default function HistoryPage() {
   if (runs.length === 0) {
     return (
       <p>
-        Chưa có lịch sử, thử tạo nội dung đầu tiên. <a href="/">Về trang chính</a>
+        Chưa có lịch sử, thử tạo nội dung đầu tiên. <Link href="/">Về trang chính</Link>
       </p>
     )
   }
@@ -39,13 +48,14 @@ export default function HistoryPage() {
       {runs.map((run) => (
         <article key={run.id}>
           <p>
-            <strong>{new Date(run.createdAt).toLocaleString('vi-VN')}</strong>
+            <strong>{parseSqliteUtc(run.createdAt).toLocaleString('vi-VN')}</strong>
           </p>
           <p>{run.inputText}</p>
           <ul>
             {run.outputs.map((o) => (
               <li key={o.id}>
-                {o.branch}: {o.editedContent ?? o.content ?? `(lỗi: ${o.errorMessage})`}
+                {BRANCH_LABELS[o.branch] ?? o.branch}:{' '}
+                {o.editedContent ?? o.content ?? `(lỗi: ${o.errorMessage})`}
               </li>
             ))}
           </ul>
