@@ -1969,7 +1969,10 @@ export default function HistoryPage() {
 
   useEffect(() => {
     fetch('/api/history')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('load_error')
+        return res.json()
+      })
       .then(setRuns)
       .catch(() => setLoadError(true))
   }, [])
