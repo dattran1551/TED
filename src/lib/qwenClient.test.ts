@@ -37,4 +37,45 @@ describe('callQwen', () => {
     const { callQwen, QwenCallError } = await import('./qwenClient')
     await expect(callQwen('prompt bất kỳ')).rejects.toBeInstanceOf(QwenCallError)
   })
+
+  it('báo lỗi rõ ràng khi chưa cấu hình GREENNODE_BASE_URL, không gọi fetch', async () => {
+    process.env.GREENNODE_BASE_URL = ''
+    const fetchMock = vi.fn()
+    global.fetch = fetchMock as any
+
+    const { callQwen, QwenCallError } = await import('./qwenClient')
+    await expect(callQwen('prompt bất kỳ')).rejects.toThrow('Chưa cấu hình GREENNODE_BASE_URL')
+    await expect(callQwen('prompt bất kỳ')).rejects.toBeInstanceOf(QwenCallError)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('đổi lỗi hết giờ chờ thành thông báo tiếng Việt dễ hiểu', async () => {
+    const timeoutErr = new Error('The operation was aborted due to timeout')
+    timeoutErr.name = 'TimeoutError'
+    global.fetch = vi.fn().mockRejectedValue(timeoutErr) as any
+
+    const { callQwen, QwenCallError } = await import('./qwenClient')
+    await expect(callQwen('prompt bất kỳ')).rejects.toBeInstanceOf(QwenCallError)
+    await expect(callQwen('prompt bất kỳ')).rejects.toThrow('không phản hồi kịp thời')
+  })
+
+  it('đổi lỗi kết nối cấp thấp thành QwenCallError có ngữ cảnh', async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error('getaddrinfo ENOTFOUND')) as any
+
+    const { callQwen, QwenCallError } = await import('./qwenClient')
+    await expect(callQwen('prompt bất kỳ')).rejects.toBeInstanceOf(QwenCallError)
+    await expect(callQwen('prompt bất kỳ')).rejects.toThrow('Không gọi được GreenNode: getaddrinfo ENOTFOUND')
+  })
+
+  it('gửi kèm tín hiệu huỷ để không treo vô hạn', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: 'ok' } }] }),
+    })
+    global.fetch = fetchMock as any
+
+    const { callQwen } = await import('./qwenClient')
+    await callQwen('prompt bất kỳ')
+    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal)
+  })
 })
