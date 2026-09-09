@@ -19,7 +19,10 @@ export default function GlossaryPage() {
 
   useEffect(() => {
     fetch('/api/glossary')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('load_error')
+        return res.json()
+      })
       .then(setRules)
       .catch(() => setLoadError(true))
   }, [])
