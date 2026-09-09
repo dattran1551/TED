@@ -1,14 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MAX_WORDS, countWords, validateInput } from '@/lib/validation'
 import { ResultCard } from '@/components/ResultCard'
+import { BRANCH_LABELS } from '@/types'
 import type { Run, RunOutput, GenerateOptions, Tone } from '@/types'
 
 const TONE_LABELS: Record<Tone, string> = {
-  chuyen_nghiep: 'Chuyên nghiệp',
-  re_trung: 'Trẻ trung',
-  hai: 'Hài',
+  chuyen_nghiep: BRANCH_LABELS.chuyen_nghiep,
+  re_trung: BRANCH_LABELS.re_trung,
+  hai: BRANCH_LABELS.hai,
+}
+
+// Khoảng cách giữa hai lần hỏi lại máy chủ xem nhánh nào đã xong.
+const POLL_INTERVAL_MS = 1500
+
+function hasPending(run: Run): boolean {
+  return run.outputs.some((o) => o.status === 'pending')
 }
 
 export default function HomePage() {
@@ -19,6 +27,34 @@ export default function HomePage() {
   const [submitting, setSubmitting] = useState(false)
   const [blockedReason, setBlockedReason] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [pollRunId, setPollRunId] = useState<number | null>(null)
+
+  // Hỏi lại máy chủ đều đặn chừng nào còn nhánh đang chạy, để mỗi thẻ tự hiện
+  // kết quả ngay khi nhánh của nó xong, không phải đợi nhánh chậm nhất.
+  useEffect(() => {
+    if (pollRunId === null) return
+    let cancelled = false
+
+    const timer = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/runs/${pollRunId}`)
+        if (!res.ok) throw new Error('poll_error')
+        const fresh: Run = await res.json()
+        if (cancelled) return
+        setRun(fresh)
+        if (!hasPending(fresh)) setPollRunId(null)
+      } catch {
+        // Lần POST ban đầu đã thành công rồi, nên nếu giờ không hỏi lại được
+        // thì chỉ im lặng dừng, không quay vòng mãi trên một kết nối hỏng.
+        if (!cancelled) setPollRunId(null)
+      }
+    }, POLL_INTERVAL_MS)
+
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [pollRunId])
 
   const wordCount = countWords(inputText)
   const options: GenerateOptions = { tones: Array.from(tones), translate }
@@ -48,8 +84,11 @@ export default function HomePage() {
         body: JSON.stringify({ inputText, options }),
       })
       if (!res.ok) throw new Error('server_error')
-      const data = await res.json()
+      const data: Run = await res.json()
+      // Máy chủ trả về ngay, mọi nhánh còn 'pending' — các thẻ hiện "Đang
+      // tạo..." rồi lần lượt sáng lên khi nhánh của mình xong.
       setRun(data)
+      setPollRunId(hasPending(data) ? data.id : null)
     } catch {
       setActionError('Không gọi được AI, thử lại sau.')
     } finally {
