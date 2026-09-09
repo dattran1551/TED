@@ -37,6 +37,21 @@ describe('runs', () => {
     expect(updatedSecond).toMatchObject({ status: 'error', errorMessage: 'lỗi mạng' })
   })
 
+  it('saveOutputResult xoá bản sửa tay cũ — kết quả sinh lại thay thế bản đã sửa', () => {
+    const run = createRun(db, 'nội dung mẫu', { tones: ['hai'], translate: false }, ['hai'])
+    const output = run.outputs[0]
+    saveOutputResult(db, output.id, { status: 'success', content: 'bản hài lần 1' })
+    saveEditedContent(db, output.id, 'bản sửa tay của người dùng')
+    expect(getRun(db, run.id)!.outputs[0].editedContent).toBe('bản sửa tay của người dùng')
+
+    // Người dùng bấm "Ghi chú, tạo lại": nội dung mới phải hiện ra, không bị
+    // bản sửa tay cũ che mất.
+    saveOutputResult(db, output.id, { status: 'success', content: 'bản hài lần 2' })
+    const updated = getRun(db, run.id)!.outputs[0]
+    expect(updated.content).toBe('bản hài lần 2')
+    expect(updated.editedContent).toBeNull()
+  })
+
   it('saveEditedContent và saveRegenerateNote ghi đúng cột', () => {
     const run = createRun(db, 'nội dung mẫu', { tones: ['hai'], translate: false }, ['hai'])
     const output = run.outputs[0]

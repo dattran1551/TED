@@ -54,6 +54,9 @@ function seedDefaultGlossary(db: Database.Database) {
 export function createDb(dbPath: string): Database.Database {
   const db = new Database(dbPath)
   db.pragma('journal_mode = WAL')
+  // SQLite mặc định TẮT kiểm tra khoá ngoại, nên ràng buộc run_outputs.run_id
+  // -> runs(id) khai báo ở dưới sẽ không có tác dụng nếu không bật dòng này.
+  db.pragma('foreign_keys = ON')
   db.exec(`
     CREATE TABLE IF NOT EXISTS glossary_rules (
       branch TEXT PRIMARY KEY,

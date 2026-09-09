@@ -49,12 +49,13 @@ export function saveOutputResult(
   outputId: number,
   result: { status: 'success' | 'error'; content?: string; errorMessage?: string }
 ): void {
-  db.prepare('UPDATE run_outputs SET status = ?, content = ?, error_message = ? WHERE id = ?').run(
-    result.status,
-    result.content ?? null,
-    result.errorMessage ?? null,
-    outputId
-  )
+  // edited_content bị xoá về NULL: một kết quả sinh mới luôn thay thế bản sửa
+  // tay trước đó. Lần sinh đầu tiên thì cột này vốn đã NULL (không đổi gì);
+  // còn khi người dùng bấm "Ghi chú, tạo lại" thì đây chính là cái ngăn màn
+  // hình tiếp tục hiện bản sửa cũ đè lên nội dung vừa sinh.
+  db.prepare(
+    'UPDATE run_outputs SET status = ?, content = ?, error_message = ?, edited_content = NULL WHERE id = ?'
+  ).run(result.status, result.content ?? null, result.errorMessage ?? null, outputId)
 }
 
 export function saveEditedContent(db: Database.Database, outputId: number, editedContent: string): void {
@@ -68,7 +69,7 @@ export function saveRegenerateNote(db: Database.Database, outputId: number, note
 export function getRun(db: Database.Database, runId: number): Run | undefined {
   const runRow = db.prepare('SELECT * FROM runs WHERE id = ?').get(runId) as any
   if (!runRow) return undefined
-  const outputRows = db.prepare('SELECT * FROM run_outputs WHERE run_id = ?').all(runId) as any[]
+  const outputRows = db.prepare('SELECT * FROM run_outputs WHERE run_id = ? ORDER BY id').all(runId) as any[]
   return {
     id: runRow.id,
     inputText: runRow.input_text,
@@ -81,7 +82,7 @@ export function getRun(db: Database.Database, runId: number): Run | undefined {
 export function listRuns(db: Database.Database, limit = 50): Run[] {
   const runRows = db.prepare('SELECT * FROM runs ORDER BY id DESC LIMIT ?').all(limit) as any[]
   return runRows.map((runRow) => {
-    const outputRows = db.prepare('SELECT * FROM run_outputs WHERE run_id = ?').all(runRow.id) as any[]
+    const outputRows = db.prepare('SELECT * FROM run_outputs WHERE run_id = ? ORDER BY id').all(runRow.id) as any[]
     return {
       id: runRow.id,
       inputText: runRow.input_text,
