@@ -1,14 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { GlossaryRule } from '@/types'
-
-const BRANCH_LABELS: Record<string, string> = {
-  chuyen_nghiep: 'Chuyên nghiệp',
-  re_trung: 'Trẻ trung',
-  hai: 'Hài',
-  viet_anh: 'Việt ↔ Anh',
-}
+import { BRANCH_LABELS } from '@/types'
+import type { Branch, GlossaryRule } from '@/types'
 
 export default function GlossaryPage() {
   const [rules, setRules] = useState<GlossaryRule[] | null>(null)
@@ -16,6 +10,7 @@ export default function GlossaryPage() {
   const [errors, setErrors] = useState<Record<string, boolean>>({})
   const [loadError, setLoadError] = useState(false)
   const [saveError, setSaveError] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
 
   useEffect(() => {
     fetch('/api/glossary')
@@ -27,7 +22,8 @@ export default function GlossaryPage() {
       .catch(() => setLoadError(true))
   }, [])
 
-  function updateRule(branch: string, field: keyof GlossaryRule, value: string) {
+  function updateRule(branch: Branch, field: keyof GlossaryRule, value: string) {
+    setJustSaved(false)
     setRules((prev) => prev?.map((r) => (r.branch === branch ? { ...r, [field]: value } : r)) ?? null)
   }
 
@@ -42,6 +38,7 @@ export default function GlossaryPage() {
 
     setSaving(true)
     setSaveError(false)
+    setJustSaved(false)
     try {
       const res = await fetch('/api/glossary', {
         method: 'PUT',
@@ -49,6 +46,11 @@ export default function GlossaryPage() {
         body: JSON.stringify({ rules }),
       })
       if (!res.ok) throw new Error('server_error')
+      // Route PUT trả về bảng thuật ngữ vừa lưu — dùng luôn nó làm nguồn sự
+      // thật, để màn hình khớp đúng với cái đang nằm trong CSDL.
+      const saved: GlossaryRule[] = await res.json()
+      setRules(saved)
+      setJustSaved(true)
     } catch {
       setSaveError(true)
     } finally {
@@ -98,6 +100,7 @@ export default function GlossaryPage() {
         </fieldset>
       ))}
       {saveError && <p role="alert">Không lưu được, thử lại sau.</p>}
+      {justSaved && !saveError && <p role="status">Đã lưu</p>}
       <button onClick={handleSave} disabled={saving}>
         {saving ? 'Đang lưu...' : 'Lưu'}
       </button>
