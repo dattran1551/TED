@@ -7,6 +7,20 @@ import { buildPrompt } from '@/lib/promptBuilder'
 import { callQwen } from '@/lib/qwenClient'
 import type { Branch, GenerateOptions } from '@/types'
 
+// Wraps saveOutputResult so a DB-write failure for one output can never
+// reject the outer Promise.all and take down the sibling branches.
+function safeSaveOutputResult(
+  db: ReturnType<typeof getDb>,
+  outputId: number,
+  result: Parameters<typeof saveOutputResult>[2]
+) {
+  try {
+    saveOutputResult(db, outputId, result)
+  } catch (writeErr) {
+    console.error(`Failed to save output ${outputId}:`, writeErr)
+  }
+}
+
 export async function POST(request: Request) {
   const body = await request.json()
   const inputText: string = body.inputText ?? ''
@@ -28,14 +42,14 @@ export async function POST(request: Request) {
     run.outputs.map(async (output) => {
       const rule = glossary.find((g) => g.branch === output.branch)
       if (!rule) {
-        saveOutputResult(db, output.id, { status: 'error', errorMessage: 'Thiếu bảng thuật ngữ cho nhánh này' })
+        safeSaveOutputResult(db, output.id, { status: 'error', errorMessage: 'Thiếu bảng thuật ngữ cho nhánh này' })
         return
       }
       try {
         const content = await callQwen(buildPrompt(inputText, output.branch, rule))
         saveOutputResult(db, output.id, { status: 'success', content })
       } catch (err) {
-        saveOutputResult(db, output.id, { status: 'error', errorMessage: (err as Error).message })
+        safeSaveOutputResult(db, output.id, { status: 'error', errorMessage: (err as Error).message })
       }
     })
   )
