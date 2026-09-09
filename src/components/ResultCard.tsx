@@ -1,14 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { BRANCH_LABELS } from '@/types'
 import type { RunOutput } from '@/types'
-
-const BRANCH_LABELS: Record<string, string> = {
-  chuyen_nghiep: 'Chuyên nghiệp',
-  re_trung: 'Trẻ trung',
-  hai: 'Hài',
-  viet_anh: 'Việt ↔ Anh',
-}
 
 export function ResultCard({
   output,
@@ -30,7 +24,7 @@ export function ResultCard({
   }, [output.content, output.editedContent, editing])
 
   return (
-    <div className="result-card">
+    <div>
       <h3>{BRANCH_LABELS[output.branch] ?? output.branch}</h3>
 
       {output.status === 'pending' && <p>Đang tạo...</p>}

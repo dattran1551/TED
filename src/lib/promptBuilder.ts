@@ -1,3 +1,4 @@
+import { BRANCH_LABELS } from '@/types'
 import type { Branch, GlossaryRule } from '@/types'
 
 export function buildPrompt(inputText: string, branch: Branch, rule: GlossaryRule): string {
@@ -16,7 +17,7 @@ export function buildPrompt(inputText: string, branch: Branch, rule: GlossaryRul
   }
 
   return [
-    `Bạn là trợ lý viết lại nội dung theo giọng văn: ${branch}.`,
+    `Bạn là trợ lý viết lại nội dung theo giọng văn: ${BRANCH_LABELS[branch]}.`,
     `Xưng hô: ${rule.xungHo}.`,
     `Ưu tiên dùng các từ/cụm: ${rule.tuVungUuTien}.`,
     `Tránh dùng: ${rule.tuTranh}.`,

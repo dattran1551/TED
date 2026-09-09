@@ -1,6 +1,15 @@
 export type Tone = 'chuyen_nghiep' | 're_trung' | 'hai'
 export type Branch = Tone | 'viet_anh'
 
+// Tên tiếng Việt của từng nhánh — dùng chung cho giao diện lẫn prompt gửi model,
+// để không nơi nào phải tự lặp lại bảng nhãn này.
+export const BRANCH_LABELS: Record<Branch, string> = {
+  chuyen_nghiep: 'Chuyên nghiệp',
+  re_trung: 'Trẻ trung',
+  hai: 'Hài',
+  viet_anh: 'Việt ↔ Anh',
+}
+
 export interface GlossaryRule {
   branch: Branch
   xungHo: string

@@ -28,6 +28,19 @@ describe('buildPrompt', () => {
     expect(prompt).toContain('chốt câu bằng punchline')
   })
 
+  it('gửi cho model tên giọng văn tiếng Việt, không phải mã khoá trong CSDL', () => {
+    const prompt = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'hai', hai)
+    expect(prompt).toContain('giọng văn: Hài.')
+    expect(prompt).not.toContain('giọng văn: hai.')
+
+    const prompt2 = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'chuyen_nghiep', {
+      ...hai,
+      branch: 'chuyen_nghiep',
+    })
+    expect(prompt2).toContain('giọng văn: Chuyên nghiệp.')
+    expect(prompt2).not.toContain('chuyen_nghiep')
+  })
+
   it('dùng câu lệnh dịch riêng cho nhánh viet_anh', () => {
     const prompt = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'viet_anh', vietAnh)
     expect(prompt).toContain('dịch sang tiếng Anh')
