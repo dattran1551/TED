@@ -12,15 +12,6 @@ export const BRANCH_LABELS: Record<Branch, string> = {
   dich_hoa: 'Tiếng Hoa',
 }
 
-export interface GlossaryRule {
-  branch: Branch
-  xungHo: string
-  tuVungUuTien: string
-  tuTranh: string
-  nhipCau: string
-  emoji: string
-}
-
 export interface GenerateOptions {
   tones: Tone[]
 }
