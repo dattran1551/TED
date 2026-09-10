@@ -37,7 +37,7 @@ describe('GET /api/runs/[id]', () => {
   })
 
   it('trả về đầy đủ lượt đã có, kèm trạng thái hiện tại của từng nhánh', async () => {
-    const run = createRun(testDb, 'nội dung mẫu', { tones: ['hai'], translate: true }, ['hai', 'viet_anh'])
+    const run = createRun(testDb, 'nội dung mẫu', { tones: ['hai', 're_trung'] }, ['hai', 're_trung'])
     saveOutputResult(testDb, run.outputs[0].id, { status: 'success', content: 'bản hài' })
 
     const res = await GET(makeRequest(String(run.id)), makeParams(String(run.id)))
@@ -49,10 +49,10 @@ describe('GET /api/runs/[id]', () => {
     expect(body.outputs).toHaveLength(2)
 
     const hai = body.outputs.find((o) => o.branch === 'hai')!
-    const vietAnh = body.outputs.find((o) => o.branch === 'viet_anh')!
+    const reTrung = body.outputs.find((o) => o.branch === 're_trung')!
     // Đúng cái mà việc hỏi lại cần thấy: nhánh xong rồi thì đã có nội dung,
     // nhánh chưa xong thì vẫn là 'pending'.
     expect(hai).toMatchObject({ status: 'success', content: 'bản hài' })
-    expect(vietAnh.status).toBe('pending')
+    expect(reTrung.status).toBe('pending')
   })
 })

@@ -22,8 +22,8 @@ describe('GET /api/history', () => {
   })
 
   it('trả về các lượt đã tạo, mới nhất trước', async () => {
-    createRun(testDb, 'run cũ', { tones: ['hai'], translate: false }, ['hai'])
-    createRun(testDb, 'run mới', { tones: ['hai'], translate: false }, ['hai'])
+    createRun(testDb, 'run cũ', { tones: ['hai'] }, ['hai'])
+    createRun(testDb, 'run mới', { tones: ['hai'] }, ['hai'])
 
     const res = await GET()
     const runs = await res.json()
