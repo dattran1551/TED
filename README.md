@@ -1,15 +1,15 @@
 # TED — Trợ lý viết nội dung
 
-Dán một đoạn nội dung vào, chọn giọng văn muốn có (Chuyên nghiệp, Trẻ trung,
-Hài) và/hoặc bật dịch Việt ↔ Anh. Ứng dụng gọi model Qwen 3.0 qua GreenNode cho
-từng nhánh song song, mỗi nhánh dùng chung một bảng thuật ngữ mà bạn tự sửa
-được. Kết quả hiện thành từng thẻ riêng: sửa tay được, ghi chú để tạo lại được,
-và mọi lượt đều lưu lại trong lịch sử.
+Dán một đoạn nội dung/yêu cầu vào, chọn giọng văn muốn có (Chuyên nghiệp, Trẻ
+trung, Hài). Ứng dụng gọi AI qua GreenNode cho từng nhánh song song, để AI tự
+quyết định cách viết đúng chất giọng văn đã chọn. Sau khi có kết quả, chọn 1
+bản để dịch tiếp sang Tiếng Anh hoặc Tiếng Hoa. Kết quả hiện thành từng thẻ
+riêng: sửa tay được, ghi chú để tạo lại được, và mọi lượt đều lưu lại trong
+lịch sử.
 
-Ba màn hình:
+Hai màn hình:
 
-- `/` — nhập nội dung và xem kết quả
-- `/glossary` — sửa bảng thuật ngữ dùng chung cho các nhánh
+- `/` — nhập nội dung, xem kết quả, chọn bản để dịch tiếp
 - `/history` — xem lại các lượt đã tạo
 
 ## Chạy thử trên máy
