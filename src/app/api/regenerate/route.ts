@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
-import { getGlossary } from '@/lib/glossary'
 import { getRun, saveOutputResult, saveRegenerateNote } from '@/lib/runs'
 import { buildRegeneratePrompt } from '@/lib/promptBuilder'
 import { callQwen } from '@/lib/qwenClient'
@@ -20,11 +19,6 @@ export async function POST(request: Request) {
   if (!output) {
     return NextResponse.json({ error: 'output_not_found' }, { status: 404 })
   }
-  const glossary = getGlossary(db)
-  const rule = glossary.find((g) => g.branch === output.branch)
-  if (!rule) {
-    return NextResponse.json({ error: 'glossary_missing' }, { status: 400 })
-  }
 
   // Với nhánh dịch (có sourceOutputId), phải dịch lại từ ĐÚNG bản giọng văn đã
   // chọn (có thể đã được sửa tay), không phải từ câu nhập gốc của cả lượt.
@@ -37,7 +31,7 @@ export async function POST(request: Request) {
   saveRegenerateNote(db, outputId, note)
 
   try {
-    const content = await callQwen(buildRegeneratePrompt(baseText, output.branch, rule, note))
+    const content = await callQwen(buildRegeneratePrompt(baseText, output.branch, note))
     saveOutputResult(db, outputId, { status: 'success', content })
   } catch (err) {
     saveOutputResult(db, outputId, { status: 'error', errorMessage: (err as Error).message })
