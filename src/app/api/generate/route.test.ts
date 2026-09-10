@@ -70,10 +70,10 @@ function makeRequest(body: unknown) {
   })
 }
 
-// Prompt của nhánh giọng văn có tên giọng văn tiếng Việt; nhánh dịch có câu
-// lệnh dịch riêng. Dùng chính BRANCH_LABELS để không lặp lại bảng nhãn ở đây.
+// Prompt của mỗi nhánh giọng văn có tên giọng văn tiếng Việt riêng — dùng
+// chính BRANCH_LABELS để không lặp lại bảng nhãn ở đây.
 const HAI_MARKER = `giọng văn: ${BRANCH_LABELS.hai}`
-const VIET_ANH_MARKER = 'dịch sang tiếng Anh'
+const RE_TRUNG_MARKER = `giọng văn: ${BRANCH_LABELS.re_trung}`
 
 const haiDefaultRule = DEFAULT_GLOSSARY.find((r) => r.branch === 'hai')!
 
@@ -107,7 +107,7 @@ afterEach(async () => {
 
 describe('POST /api/generate', () => {
   it('trả 400 khi không có tuỳ chọn nào được chọn', async () => {
-    const res = await POST(makeRequest({ inputText: 'xin chào', options: { tones: [], translate: false } }))
+    const res = await POST(makeRequest({ inputText: 'xin chào', options: { tones: [] } }))
     expect(res.status).toBe(400)
     const data = await res.json()
     expect(data.error).toBe('no_options')
@@ -115,7 +115,7 @@ describe('POST /api/generate', () => {
 
   it('sinh đủ số bản theo tuỳ chọn, mỗi bản có nội dung', async () => {
     const res = await POST(
-      makeRequest({ inputText: 'xin chào', options: { tones: ['hai'], translate: true } })
+      makeRequest({ inputText: 'xin chào', options: { tones: ['hai', 're_trung'] } })
     )
     expect(res.status).toBe(200)
     const created = await res.json()
@@ -130,7 +130,7 @@ describe('POST /api/generate', () => {
     const release = openGate()
 
     const res = await POST(
-      makeRequest({ inputText: 'xin chào', options: { tones: ['hai'], translate: true } })
+      makeRequest({ inputText: 'xin chào', options: { tones: ['hai', 're_trung'] } })
     )
     const created: Run = await res.json()
 
@@ -156,25 +156,25 @@ describe('POST /api/generate', () => {
     aiControl.failMarkers = [HAI_MARKER]
 
     const res = await POST(
-      makeRequest({ inputText: 'xin chào', options: { tones: ['hai'], translate: true } })
+      makeRequest({ inputText: 'xin chào', options: { tones: ['hai', 're_trung'] } })
     )
     const created = await res.json()
     const run = await settledRun(created.id)
 
     const hai = run.outputs.find((o) => o.branch === 'hai')!
-    const vietAnh = run.outputs.find((o) => o.branch === 'viet_anh')!
+    const reTrung = run.outputs.find((o) => o.branch === 're_trung')!
     expect(hai.status).toBe('error')
     expect(hai.errorMessage).toBe('lỗi giả lập')
     // Nhánh còn lại vẫn thành công bình thường trong cùng một lượt.
-    expect(vietAnh.status).toBe('success')
-    expect(vietAnh.content).toBe('bản viết lại giả lập')
+    expect(reTrung.status).toBe('success')
+    expect(reTrung.content).toBe('bản viết lại giả lập')
   })
 
   it('cả hai nhánh cùng lỗi thì request vẫn không sập, vẫn đủ output', async () => {
-    aiControl.failMarkers = [HAI_MARKER, VIET_ANH_MARKER]
+    aiControl.failMarkers = [HAI_MARKER, RE_TRUNG_MARKER]
 
     const res = await POST(
-      makeRequest({ inputText: 'xin chào', options: { tones: ['hai'], translate: true } })
+      makeRequest({ inputText: 'xin chào', options: { tones: ['hai', 're_trung'] } })
     )
     expect(res.status).toBe(200)
     const created = await res.json()
@@ -187,11 +187,11 @@ describe('POST /api/generate', () => {
   it('lỗi ghi DB ở nhánh thành công không làm hỏng cả request lẫn nhánh còn lại', async () => {
     // Giả lập: ghi kết quả cho nhánh 'hai' luôn ném lỗi (như SQLite ghi thất bại).
     // Nếu route không bọc try/catch quanh saveOutputResult, lỗi này sẽ làm
-    // Promise.all reject và cả việc chạy nền sập — kể cả nhánh 'viet_anh' đang chạy tốt.
+    // Promise.all reject và cả việc chạy nền sập — kể cả nhánh 're_trung' đang chạy tốt.
     writeFailure.branch = 'hai'
 
     const res = await POST(
-      makeRequest({ inputText: 'xin chào', options: { tones: ['hai'], translate: true } })
+      makeRequest({ inputText: 'xin chào', options: { tones: ['hai', 're_trung'] } })
     )
     expect(res.status).toBe(200)
     const created = await res.json()
@@ -199,25 +199,25 @@ describe('POST /api/generate', () => {
     expect(run.outputs).toHaveLength(2)
 
     const haiOutput = run.outputs.find((o) => o.branch === 'hai')!
-    const translateOutput = run.outputs.find((o) => o.branch === 'viet_anh')!
+    const otherOutput = run.outputs.find((o) => o.branch === 're_trung')!
 
     // Nhánh 'hai' ghi thất bại (lỗi bị nuốt) nên vẫn còn nguyên trạng thái
     // 'pending' ban đầu — nhưng việc chạy nền không hề bị throw.
     expect(haiOutput.status).toBe('pending')
     // Nhánh còn lại hoàn toàn không bị ảnh hưởng, vẫn ghi thành công bình thường.
-    expect(translateOutput.status).toBe('success')
-    expect(translateOutput.content).toBe('bản viết lại giả lập')
+    expect(otherOutput.status).toBe('success')
+    expect(otherOutput.content).toBe('bản viết lại giả lập')
   })
 
   it('lỗi ghi DB khi lưu kết quả lỗi (nhánh catch) không làm hỏng nhánh còn lại', async () => {
     // Cả 2 nhánh đều bị AI ném lỗi nên cùng đi vào khối catch của route và
     // cùng gọi saveOutputResult để lưu status 'error'. Ta giả lập việc ghi đó
     // thất bại riêng cho nhánh 'hai'.
-    aiControl.failMarkers = [HAI_MARKER, VIET_ANH_MARKER]
+    aiControl.failMarkers = [HAI_MARKER, RE_TRUNG_MARKER]
     writeFailure.branch = 'hai'
 
     const res = await POST(
-      makeRequest({ inputText: 'xin chào', options: { tones: ['hai'], translate: true } })
+      makeRequest({ inputText: 'xin chào', options: { tones: ['hai', 're_trung'] } })
     )
     expect(res.status).toBe(200)
     const created = await res.json()
@@ -225,12 +225,12 @@ describe('POST /api/generate', () => {
     expect(run.outputs).toHaveLength(2)
 
     const haiOutput = run.outputs.find((o) => o.branch === 'hai')!
-    const translateOutput = run.outputs.find((o) => o.branch === 'viet_anh')!
+    const otherOutput = run.outputs.find((o) => o.branch === 're_trung')!
 
     // Ghi lỗi cho nhánh 'hai' bị nuốt nên nó vẫn còn nguyên 'pending'.
     expect(haiOutput.status).toBe('pending')
-    // Nhánh 'viet_anh' vẫn ghi được trạng thái 'error' của riêng nó bình thường.
-    expect(translateOutput.status).toBe('error')
+    // Nhánh 're_trung' vẫn ghi được trạng thái 'error' của riêng nó bình thường.
+    expect(otherOutput.status).toBe('error')
   })
 
   it('lỗi ghi DB khi thiếu bảng thuật ngữ không làm hỏng nhánh còn lại', async () => {
@@ -241,7 +241,7 @@ describe('POST /api/generate', () => {
     writeFailure.branch = 'hai'
 
     const res = await POST(
-      makeRequest({ inputText: 'xin chào', options: { tones: ['hai'], translate: true } })
+      makeRequest({ inputText: 'xin chào', options: { tones: ['hai', 're_trung'] } })
     )
     expect(res.status).toBe(200)
     const created = await res.json()
@@ -249,27 +249,27 @@ describe('POST /api/generate', () => {
     expect(run.outputs).toHaveLength(2)
 
     const haiOutput = run.outputs.find((o) => o.branch === 'hai')!
-    const translateOutput = run.outputs.find((o) => o.branch === 'viet_anh')!
+    const otherOutput = run.outputs.find((o) => o.branch === 're_trung')!
 
     // Ghi lỗi "thiếu thuật ngữ" cho nhánh 'hai' bị nuốt nên nó vẫn còn 'pending'.
     expect(haiOutput.status).toBe('pending')
-    // Nhánh 'viet_anh' (có đủ thuật ngữ) vẫn chạy và ghi thành công bình thường.
-    expect(translateOutput.status).toBe('success')
+    // Nhánh 're_trung' (có đủ thuật ngữ) vẫn chạy và ghi thành công bình thường.
+    expect(otherOutput.status).toBe('success')
   })
 
   it('thiếu bảng thuật ngữ (ghi được) thì nhánh đó báo lỗi rõ ràng, nhánh kia vẫn xong', async () => {
     testDb.exec("DELETE FROM glossary_rules WHERE branch = 'hai'")
 
     const res = await POST(
-      makeRequest({ inputText: 'xin chào', options: { tones: ['hai'], translate: true } })
+      makeRequest({ inputText: 'xin chào', options: { tones: ['hai', 're_trung'] } })
     )
     const created = await res.json()
     const run = await settledRun(created.id)
 
     const haiOutput = run.outputs.find((o) => o.branch === 'hai')!
-    const translateOutput = run.outputs.find((o) => o.branch === 'viet_anh')!
+    const otherOutput = run.outputs.find((o) => o.branch === 're_trung')!
     expect(haiOutput.status).toBe('error')
     expect(haiOutput.errorMessage).toBe('Thiếu bảng thuật ngữ cho nhánh này')
-    expect(translateOutput.status).toBe('success')
+    expect(otherOutput.status).toBe('success')
   })
 })

@@ -25,7 +25,7 @@ function safeSaveOutputResult(
 export async function POST(request: Request) {
   const body = await request.json()
   const inputText: string = body.inputText ?? ''
-  const options: GenerateOptions = body.options ?? { tones: [], translate: false }
+  const options: GenerateOptions = body.options ?? { tones: [] }
 
   const validation = validateInput(inputText, options)
   if (!validation.valid) {
@@ -34,7 +34,6 @@ export async function POST(request: Request) {
 
   const db = getDb()
   const branches: Branch[] = [...options.tones]
-  if (options.translate) branches.push('viet_anh')
 
   const run = createRun(db, inputText, options, branches)
   const glossary = getGlossary(db)
