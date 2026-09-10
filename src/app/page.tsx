@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { MAX_WORDS, countWords, validateInput } from '@/lib/validation'
 import { ResultCard } from '@/components/ResultCard'
 import { BRANCH_LABELS } from '@/types'
-import type { Run, RunOutput, GenerateOptions, Tone } from '@/types'
+import type { Run, RunOutput, GenerateOptions, Tone, TranslateTarget } from '@/types'
 
 const TONE_LABELS: Record<Tone, string> = {
   chuyen_nghiep: BRANCH_LABELS.chuyen_nghiep,
@@ -22,7 +22,6 @@ function hasPending(run: Run): boolean {
 export default function HomePage() {
   const [inputText, setInputText] = useState('')
   const [tones, setTones] = useState<Set<Tone>>(new Set())
-  const [translate, setTranslate] = useState(false)
   const [run, setRun] = useState<Run | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [blockedReason, setBlockedReason] = useState<string | null>(null)
@@ -57,7 +56,7 @@ export default function HomePage() {
   }, [pollRunId])
 
   const wordCount = countWords(inputText)
-  const options: GenerateOptions = { tones: Array.from(tones), translate }
+  const options: GenerateOptions = { tones: Array.from(tones) }
   const validation = validateInput(inputText, options)
 
   function toggleTone(tone: Tone) {
@@ -113,6 +112,23 @@ export default function HomePage() {
     }
   }
 
+  async function handleTranslate(sourceOutput: RunOutput, targetBranch: TranslateTarget) {
+    if (!run) return
+    setActionError(null)
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ runId: run.id, sourceOutputId: sourceOutput.id, targetBranch }),
+      })
+      if (!res.ok) throw new Error('server_error')
+      const data: Run = await res.json()
+      setRun(data)
+    } catch {
+      setActionError('Không dịch được, thử lại sau.')
+    }
+  }
+
   async function handleSaveEdit(output: RunOutput, editedContent: string) {
     if (!run) return
     setActionError(null)
@@ -162,16 +178,12 @@ export default function HomePage() {
                 {TONE_LABELS[tone]}
               </label>
             ))}
-            <label className="tone-chip" data-tone="viet_anh" data-checked={translate}>
-              <input type="checkbox" checked={translate} onChange={(e) => setTranslate(e.target.checked)} />
-              Cặp Việt ↔ Anh
-            </label>
           </div>
         </fieldset>
 
         <div className="composer-messages">
           {blockedReason === 'no_options' && (
-            <p className="alert" role="alert">Chọn ít nhất 1 giọng văn hoặc bật cặp Việt-Anh nhé.</p>
+            <p className="alert" role="alert">Chọn ít nhất 1 giọng văn nhé.</p>
           )}
           {blockedReason === 'too_long' && (
             <p className="alert" role="alert">Đoạn nhập vượt quá {MAX_WORDS} từ.</p>
@@ -193,6 +205,7 @@ export default function HomePage() {
               output={output}
               onRegenerate={(note) => handleRegenerate(output, note)}
               onSaveEdit={(text) => handleSaveEdit(output, text)}
+              onTranslate={(target) => handleTranslate(output, target)}
             />
           ))}
         </section>

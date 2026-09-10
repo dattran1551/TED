@@ -20,11 +20,12 @@
   --vng-gray-80: #58595b;
   --vng-black-95: #333132;
 
-  /* Extended color — dùng làm màu định danh cho 4 nhánh giọng văn */
+  /* Extended color — dùng làm màu định danh cho 5 nhánh (3 giọng văn + 2 bản dịch) */
   --tone-chuyen-nghiep: #00f0ff; /* Electric Cyan */
   --tone-re-trung: #b0ff00; /* Cyber Lime */
   --tone-hai: #a259ff; /* Mystic Violet */
-  --tone-viet-anh: #2ef0a0; /* Mint Blaze */
+  --tone-dich-anh: #2ef0a0; /* Mint Blaze */
+  --tone-dich-hoa: #ffe600; /* Neon Lemon */
   --vng-danger: #ff4d6a; /* biến thể sáng hơn của Neon Inferno, đủ tương phản trên nền tối */
 
   /* Token ngữ nghĩa cho giao diện tối */
@@ -341,10 +342,6 @@ fieldset {
 .tone-chip[data-tone="hai"] {
   --accent: var(--tone-hai);
 }
-.tone-chip[data-tone="viet_anh"] {
-  --accent: var(--tone-viet-anh);
-}
-
 .tone-chip:hover {
   border-color: var(--accent);
 }
@@ -369,7 +366,7 @@ fieldset {
 }
 
 .status {
-  color: var(--tone-viet-anh);
+  color: var(--tone-dich-anh);
   font-size: 0.9rem;
 }
 
@@ -469,8 +466,11 @@ fieldset {
 .result-card[data-branch="hai"] {
   --accent: var(--tone-hai);
 }
-.result-card[data-branch="viet_anh"] {
-  --accent: var(--tone-viet-anh);
+.result-card[data-branch="dich_anh"] {
+  --accent: var(--tone-dich-anh);
+}
+.result-card[data-branch="dich_hoa"] {
+  --accent: var(--tone-dich-hoa);
 }
 
 .result-card-head {
@@ -555,8 +555,11 @@ fieldset {
 .glossary-card[data-branch="hai"] {
   --accent: var(--tone-hai);
 }
-.glossary-card[data-branch="viet_anh"] {
-  --accent: var(--tone-viet-anh);
+.glossary-card[data-branch="dich_anh"] {
+  --accent: var(--tone-dich-anh);
+}
+.glossary-card[data-branch="dich_hoa"] {
+  --accent: var(--tone-dich-hoa);
 }
 
 .glossary-card legend {
@@ -634,8 +637,11 @@ fieldset {
 .history-outputs li[data-branch="hai"] {
   --accent: var(--tone-hai);
 }
-.history-outputs li[data-branch="viet_anh"] {
-  --accent: var(--tone-viet-anh);
+.history-outputs li[data-branch="dich_anh"] {
+  --accent: var(--tone-dich-anh);
+}
+.history-outputs li[data-branch="dich_hoa"] {
+  --accent: var(--tone-dich-hoa);
 }
 
 .history-output-label {
@@ -648,4 +654,35 @@ fieldset {
 .history-output-text {
   color: var(--ink-soft);
   font-size: 0.9rem;
+}
+
+/* ---------------------------- Chọn bản để dịch --------------------------- */
+.result-card-translate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.translate-btn {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+}
+
+.translate-btn[data-target="dich_anh"] {
+  border-color: var(--tone-dich-anh);
+}
+
+.translate-btn[data-target="dich_anh"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--tone-dich-anh) 18%, var(--surface-2));
+  color: var(--ink);
+}
+
+.translate-btn[data-target="dich_hoa"] {
+  border-color: var(--tone-dich-hoa);
+}
+
+.translate-btn[data-target="dich_hoa"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--tone-dich-hoa) 18%, var(--surface-2));
+  color: var(--ink);
 }

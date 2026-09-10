@@ -2,26 +2,35 @@
 
 import { useState, useEffect } from 'react'
 import { BRANCH_LABELS } from '@/types'
-import type { RunOutput } from '@/types'
+import type { RunOutput, TranslateTarget } from '@/types'
+
+// Chỉ các bản giọng văn (không phải bản dịch) mới cho phép chọn để dịch tiếp —
+// tránh việc dịch một bản dịch, gây lẫn lộn nguồn gốc nội dung.
+const TONE_BRANCHES = new Set(['chuyen_nghiep', 're_trung', 'hai'])
 
 export function ResultCard({
   output,
   onRegenerate,
   onSaveEdit,
+  onTranslate,
 }: {
   output: RunOutput
   onRegenerate: (note: string) => void
   onSaveEdit: (text: string) => void
+  onTranslate: (targetBranch: TranslateTarget) => void
 }) {
   const [note, setNote] = useState('')
   const [editing, setEditing] = useState(false)
   const [editedText, setEditedText] = useState(output.editedContent ?? output.content ?? '')
+  const [chosen, setChosen] = useState(false)
 
   useEffect(() => {
     if (!editing) {
       setEditedText(output.editedContent ?? output.content ?? '')
     }
   }, [output.content, output.editedContent, editing])
+
+  const canTranslate = TONE_BRANCHES.has(output.branch)
 
   return (
     <div className="result-card" data-branch={output.branch}>
@@ -79,6 +88,31 @@ export function ResultCard({
           />
           <button className="btn btn-ghost btn-sm" onClick={() => onRegenerate(note)}>
             Ghi chú, tạo lại
+          </button>
+        </div>
+      )}
+
+      {output.status === 'success' && canTranslate && !chosen && (
+        <button className="btn btn-ghost btn-sm" onClick={() => setChosen(true)}>
+          Chọn bản này
+        </button>
+      )}
+
+      {output.status === 'success' && canTranslate && chosen && (
+        <div className="result-card-translate">
+          <button
+            className="btn btn-sm translate-btn"
+            data-target="dich_anh"
+            onClick={() => onTranslate('dich_anh')}
+          >
+            Dịch sang Tiếng Anh
+          </button>
+          <button
+            className="btn btn-sm translate-btn"
+            data-target="dich_hoa"
+            onClick={() => onTranslate('dich_hoa')}
+          >
+            Dịch sang Tiếng Hoa
           </button>
         </div>
       )}
