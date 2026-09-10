@@ -24,29 +24,41 @@ export function ResultCard({
   }, [output.content, output.editedContent, editing])
 
   return (
-    <div>
-      <h3>{BRANCH_LABELS[output.branch] ?? output.branch}</h3>
+    <div className="result-card" data-branch={output.branch}>
+      <div className="result-card-head">
+        <span className="result-card-dot" aria-hidden="true" />
+        <h3 className="result-card-title">{BRANCH_LABELS[output.branch] ?? output.branch}</h3>
+      </div>
 
-      {output.status === 'pending' && <p>Đang tạo...</p>}
+      {output.status === 'pending' && <p className="result-card-pending">Đang tạo...</p>}
 
       {output.status === 'error' && (
-        <div role="alert">
+        <div className="result-card-error" role="alert">
           <p>Không tạo được bản này: {output.errorMessage ?? 'Lỗi không rõ.'}</p>
-          <button onClick={() => onRegenerate('')}>Thử lại</button>
+          <button className="btn btn-ghost" onClick={() => onRegenerate('')}>
+            Thử lại
+          </button>
         </div>
       )}
 
       {output.status === 'success' && !editing && (
         <>
-          <p>{output.editedContent ?? output.content}</p>
-          <button onClick={() => setEditing(true)}>Sửa tay</button>
+          <p className="result-card-text">{output.editedContent ?? output.content}</p>
+          <button className="btn btn-ghost" onClick={() => setEditing(true)}>
+            Sửa tay
+          </button>
         </>
       )}
 
       {output.status === 'success' && editing && (
         <>
-          <textarea value={editedText} onChange={(e) => setEditedText(e.target.value)} />
+          <textarea
+            className="result-card-edit"
+            value={editedText}
+            onChange={(e) => setEditedText(e.target.value)}
+          />
           <button
+            className="btn btn-primary btn-sm"
             onClick={() => {
               onSaveEdit(editedText)
               setEditing(false)
@@ -58,13 +70,16 @@ export function ResultCard({
       )}
 
       {output.status === 'success' && (
-        <div>
+        <div className="result-card-note">
           <input
+            className="input"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Ghi chú điều chỉnh (vd: hài hơn, ngắn câu lại)"
           />
-          <button onClick={() => onRegenerate(note)}>Ghi chú, tạo lại</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => onRegenerate(note)}>
+            Ghi chú, tạo lại
+          </button>
         </div>
       )}
     </div>

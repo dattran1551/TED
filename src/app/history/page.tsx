@@ -28,39 +28,59 @@ export default function HistoryPage() {
 
   if (loadError) {
     return (
-      <p role="alert">
-        Không tải được lịch sử. <button onClick={() => location.reload()}>Thử lại</button>
-      </p>
+      <main className="page-shell">
+        <p className="alert" role="alert">
+          Không tải được lịch sử.{' '}
+          <button className="btn btn-ghost btn-sm" onClick={() => location.reload()}>
+            Thử lại
+          </button>
+        </p>
+      </main>
     )
   }
-  if (!runs) return <p>Đang tải...</p>
+  if (!runs) {
+    return (
+      <main className="page-shell">
+        <p className="loading-text">Đang tải...</p>
+      </main>
+    )
+  }
   if (runs.length === 0) {
     return (
-      <p>
-        Chưa có lịch sử, thử tạo nội dung đầu tiên. <Link href="/">Về trang chính</Link>
-      </p>
+      <main className="page-shell">
+        <p className="empty-state">
+          Chưa có lịch sử, thử tạo nội dung đầu tiên.{' '}
+          <Link className="link-accent" href="/">
+            Về trang chính
+          </Link>
+        </p>
+      </main>
     )
   }
 
   return (
-    <main>
-      <h1>Lịch sử</h1>
-      {runs.map((run) => (
-        <article key={run.id}>
-          <p>
-            <strong>{parseSqliteUtc(run.createdAt).toLocaleString('vi-VN')}</strong>
-          </p>
-          <p>{run.inputText}</p>
-          <ul>
-            {run.outputs.map((o) => (
-              <li key={o.id}>
-                {BRANCH_LABELS[o.branch] ?? o.branch}:{' '}
-                {o.editedContent ?? o.content ?? `(lỗi: ${o.errorMessage})`}
-              </li>
-            ))}
-          </ul>
-        </article>
-      ))}
+    <main className="page-shell">
+      <div className="hero">
+        <h1>Lịch sử</h1>
+      </div>
+      <div className="history-list">
+        {runs.map((run) => (
+          <article key={run.id} className="history-card">
+            <p className="history-date">{parseSqliteUtc(run.createdAt).toLocaleString('vi-VN')}</p>
+            <p className="history-input">{run.inputText}</p>
+            <ul className="history-outputs">
+              {run.outputs.map((o) => (
+                <li key={o.id} data-branch={o.branch}>
+                  <span className="history-output-label">{BRANCH_LABELS[o.branch] ?? o.branch}</span>
+                  <span className="history-output-text">
+                    {o.editedContent ?? o.content ?? `(lỗi: ${o.errorMessage})`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
     </main>
   )
 }

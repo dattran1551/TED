@@ -137,45 +137,56 @@ export default function HomePage() {
   }
 
   return (
-    <main>
-      <h1>Trợ lý viết nội dung</h1>
+    <main className="page-shell">
+      <div className="hero">
+        <h1>Trợ lý viết nội dung</h1>
+      </div>
 
-      <textarea
-        value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
-        placeholder="Dán yêu cầu của bạn vào đây..."
-      />
-      <p>
-        {wordCount} / {MAX_WORDS} từ
-      </p>
+      <div className="composer">
+        <textarea
+          className="input textarea-main"
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          placeholder="Dán yêu cầu của bạn vào đây..."
+        />
+        <p className="word-count">
+          {wordCount} / {MAX_WORDS} từ
+        </p>
 
-      <fieldset>
-        <legend>Giọng văn</legend>
-        {(Object.keys(TONE_LABELS) as Tone[]).map((tone) => (
-          <label key={tone}>
-            <input type="checkbox" checked={tones.has(tone)} onChange={() => toggleTone(tone)} />
-            {TONE_LABELS[tone]}
-          </label>
-        ))}
-        <label>
-          <input type="checkbox" checked={translate} onChange={(e) => setTranslate(e.target.checked)} />
-          Cặp Việt ↔ Anh
-        </label>
-      </fieldset>
+        <fieldset className="tone-picker">
+          <legend>Giọng văn</legend>
+          <div className="tone-picker-options">
+            {(Object.keys(TONE_LABELS) as Tone[]).map((tone) => (
+              <label key={tone} className="tone-chip" data-tone={tone} data-checked={tones.has(tone)}>
+                <input type="checkbox" checked={tones.has(tone)} onChange={() => toggleTone(tone)} />
+                {TONE_LABELS[tone]}
+              </label>
+            ))}
+            <label className="tone-chip" data-tone="viet_anh" data-checked={translate}>
+              <input type="checkbox" checked={translate} onChange={(e) => setTranslate(e.target.checked)} />
+              Cặp Việt ↔ Anh
+            </label>
+          </div>
+        </fieldset>
 
-      {blockedReason === 'no_options' && (
-        <p role="alert">Chọn ít nhất 1 giọng văn hoặc bật cặp Việt-Anh nhé.</p>
-      )}
-      {blockedReason === 'too_long' && <p role="alert">Đoạn nhập vượt quá {MAX_WORDS} từ.</p>}
-      {blockedReason === 'empty' && <p role="alert">Nhập nội dung trước đã.</p>}
-      {actionError && <p role="alert">{actionError}</p>}
+        <div className="composer-messages">
+          {blockedReason === 'no_options' && (
+            <p className="alert" role="alert">Chọn ít nhất 1 giọng văn hoặc bật cặp Việt-Anh nhé.</p>
+          )}
+          {blockedReason === 'too_long' && (
+            <p className="alert" role="alert">Đoạn nhập vượt quá {MAX_WORDS} từ.</p>
+          )}
+          {blockedReason === 'empty' && <p className="alert" role="alert">Nhập nội dung trước đã.</p>}
+          {actionError && <p className="alert" role="alert">{actionError}</p>}
+        </div>
 
-      <button onClick={handleSubmit} disabled={submitting}>
-        {submitting ? 'Đang tạo...' : 'Tạo nội dung'}
-      </button>
+        <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting}>
+          {submitting ? 'Đang tạo...' : 'Tạo nội dung'}
+        </button>
+      </div>
 
       {run && (
-        <section>
+        <section className="results-grid">
           {run.outputs.map((output) => (
             <ResultCard
               key={output.id}

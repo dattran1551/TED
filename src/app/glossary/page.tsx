@@ -60,48 +60,92 @@ export default function GlossaryPage() {
 
   if (loadError) {
     return (
-      <p role="alert">
-        Không tải được bảng thuật ngữ. <button onClick={() => location.reload()}>Thử lại</button>
-      </p>
+      <main className="page-shell">
+        <p className="alert" role="alert">
+          Không tải được bảng thuật ngữ.{' '}
+          <button className="btn btn-ghost btn-sm" onClick={() => location.reload()}>
+            Thử lại
+          </button>
+        </p>
+      </main>
     )
   }
-  if (!rules) return <p>Đang tải...</p>
+  if (!rules) {
+    return (
+      <main className="page-shell">
+        <p className="loading-text">Đang tải...</p>
+      </main>
+    )
+  }
 
   return (
-    <main>
-      <h1>Bảng thuật ngữ</h1>
-      {rules.map((rule) => (
-        <fieldset key={rule.branch}>
-          <legend>{BRANCH_LABELS[rule.branch] ?? rule.branch}</legend>
-          {errors[rule.branch] && <p role="alert">Thiếu thông tin bắt buộc cho mục này.</p>}
-          <label>
-            Xưng hô
-            <input value={rule.xungHo} onChange={(e) => updateRule(rule.branch, 'xungHo', e.target.value)} />
-          </label>
-          <label>
-            Từ vựng ưu tiên
-            <input
-              value={rule.tuVungUuTien}
-              onChange={(e) => updateRule(rule.branch, 'tuVungUuTien', e.target.value)}
-            />
-          </label>
-          <label>
-            Từ tránh dùng
-            <input value={rule.tuTranh} onChange={(e) => updateRule(rule.branch, 'tuTranh', e.target.value)} />
-          </label>
-          <label>
-            Nhịp câu
-            <input value={rule.nhipCau} onChange={(e) => updateRule(rule.branch, 'nhipCau', e.target.value)} />
-          </label>
-          <label>
-            Emoji
-            <input value={rule.emoji} onChange={(e) => updateRule(rule.branch, 'emoji', e.target.value)} />
-          </label>
-        </fieldset>
-      ))}
-      {saveError && <p role="alert">Không lưu được, thử lại sau.</p>}
-      {justSaved && !saveError && <p role="status">Đã lưu</p>}
-      <button onClick={handleSave} disabled={saving}>
+    <main className="page-shell">
+      <div className="hero">
+        <h1>Bảng thuật ngữ</h1>
+      </div>
+      <div className="glossary-grid">
+        {rules.map((rule) => (
+          <fieldset key={rule.branch} className="glossary-card" data-branch={rule.branch}>
+            <legend>{BRANCH_LABELS[rule.branch] ?? rule.branch}</legend>
+            {errors[rule.branch] && (
+              <p className="alert" role="alert">
+                Thiếu thông tin bắt buộc cho mục này.
+              </p>
+            )}
+            <label className="field">
+              <span className="field-label">Xưng hô</span>
+              <input
+                className="input"
+                value={rule.xungHo}
+                onChange={(e) => updateRule(rule.branch, 'xungHo', e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">Từ vựng ưu tiên</span>
+              <input
+                className="input"
+                value={rule.tuVungUuTien}
+                onChange={(e) => updateRule(rule.branch, 'tuVungUuTien', e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">Từ tránh dùng</span>
+              <input
+                className="input"
+                value={rule.tuTranh}
+                onChange={(e) => updateRule(rule.branch, 'tuTranh', e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">Nhịp câu</span>
+              <input
+                className="input"
+                value={rule.nhipCau}
+                onChange={(e) => updateRule(rule.branch, 'nhipCau', e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">Emoji</span>
+              <input
+                className="input"
+                value={rule.emoji}
+                onChange={(e) => updateRule(rule.branch, 'emoji', e.target.value)}
+              />
+            </label>
+          </fieldset>
+        ))}
+      </div>
+      {saveError && (
+        <p className="alert" role="alert">
+          Không lưu được, thử lại sau.
+        </p>
+      )}
+      {justSaved && !saveError && (
+        <p className="status" role="status">
+          Đã lưu
+        </p>
+      )}
+      <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
         {saving ? 'Đang lưu...' : 'Lưu'}
       </button>
     </main>
