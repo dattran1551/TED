@@ -11,8 +11,17 @@ const hai: GlossaryRule = {
   emoji: 'emoji có chọn lọc',
 }
 
-const vietAnh: GlossaryRule = {
-  branch: 'viet_anh',
+const dichAnh: GlossaryRule = {
+  branch: 'dich_anh',
+  xungHo: 'giữ theo bản gốc',
+  tuVungUuTien: 'PvP, skin, buff/nerf',
+  tuTranh: 'dịch nghĩa đen thuật ngữ game',
+  nhipCau: 'giữ thứ tự thông tin gốc',
+  emoji: 'giữ theo bản gốc',
+}
+
+const dichHoa: GlossaryRule = {
+  branch: 'dich_hoa',
   xungHo: 'giữ theo bản gốc',
   tuVungUuTien: 'PvP, skin, buff/nerf',
   tuTranh: 'dịch nghĩa đen thuật ngữ game',
@@ -21,30 +30,24 @@ const vietAnh: GlossaryRule = {
 }
 
 describe('buildPrompt', () => {
-  it('chứa nội dung gốc và các quy tắc của giọng văn', () => {
+  it('với giọng văn thường: chứa nội dung gốc, tên giọng văn thật, và quy tắc', () => {
     const prompt = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'hai', hai)
     expect(prompt).toContain('Bản 2.5 ra mắt thứ Sáu.')
-    expect(prompt).toContain('tui / bạn')
+    expect(prompt).toContain('giọng văn: Hài.')
     expect(prompt).toContain('chốt câu bằng punchline')
   })
 
-  it('gửi cho model tên giọng văn tiếng Việt, không phải mã khoá trong CSDL', () => {
-    const prompt = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'hai', hai)
-    expect(prompt).toContain('giọng văn: Hài.')
-    expect(prompt).not.toContain('giọng văn: hai.')
-
-    const prompt2 = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'chuyen_nghiep', {
-      ...hai,
-      branch: 'chuyen_nghiep',
-    })
-    expect(prompt2).toContain('giọng văn: Chuyên nghiệp.')
-    expect(prompt2).not.toContain('chuyen_nghiep')
-  })
-
-  it('dùng câu lệnh dịch riêng cho nhánh viet_anh', () => {
-    const prompt = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'viet_anh', vietAnh)
+  it('với nhánh dich_anh: dùng câu lệnh dịch sang tiếng Anh', () => {
+    const prompt = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'dich_anh', dichAnh)
     expect(prompt).toContain('dịch sang tiếng Anh')
     expect(prompt).toContain('PvP, skin, buff/nerf')
+    expect(prompt).not.toContain('tiếng Hoa')
+  })
+
+  it('với nhánh dich_hoa: dùng câu lệnh dịch sang tiếng Hoa, khác dich_anh', () => {
+    const prompt = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'dich_hoa', dichHoa)
+    expect(prompt).toContain('dịch sang tiếng Hoa')
+    expect(prompt).not.toContain('tiếng Anh')
   })
 })
 

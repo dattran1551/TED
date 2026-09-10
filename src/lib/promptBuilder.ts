@@ -1,10 +1,20 @@
 import { BRANCH_LABELS } from '@/types'
-import type { Branch, GlossaryRule } from '@/types'
+import type { Branch, GlossaryRule, TranslateTarget } from '@/types'
+
+const TRANSLATE_TARGET_LANGUAGE: Record<TranslateTarget, string> = {
+  dich_anh: 'tiếng Anh',
+  dich_hoa: 'tiếng Hoa (chữ Giản thể)',
+}
+
+function isTranslateTarget(branch: Branch): branch is TranslateTarget {
+  return branch === 'dich_anh' || branch === 'dich_hoa'
+}
 
 export function buildPrompt(inputText: string, branch: Branch, rule: GlossaryRule): string {
-  if (branch === 'viet_anh') {
+  if (isTranslateTarget(branch)) {
+    const language = TRANSLATE_TARGET_LANGUAGE[branch]
     return [
-      'Bạn là trợ lý dịch nội dung sang tiếng Anh.',
+      `Bạn là trợ lý dịch nội dung sang ${language}.`,
       `Giữ nguyên, không dịch các thuật ngữ sau: ${rule.tuVungUuTien}.`,
       `Không dịch nghĩa đen các thuật ngữ bị cấm: ${rule.tuTranh}.`,
       `Giữ đúng thứ tự thông tin gốc: ${rule.nhipCau}.`,
@@ -12,7 +22,7 @@ export function buildPrompt(inputText: string, branch: Branch, rule: GlossaryRul
       'Nội dung gốc:',
       inputText,
       '',
-      'Hãy dịch sang tiếng Anh, chỉ trả về bản dịch, không thêm giải thích.',
+      `Hãy dịch sang ${language}, chỉ trả về bản dịch, không thêm giải thích.`,
     ].join('\n')
   }
 
