@@ -18,6 +18,7 @@ export function buildPrompt(inputText: string, branch: Branch, rule: GlossaryRul
       `Giữ nguyên, không dịch các thuật ngữ sau: ${rule.tuVungUuTien}.`,
       `Không dịch nghĩa đen các thuật ngữ bị cấm: ${rule.tuTranh}.`,
       `Giữ đúng thứ tự thông tin gốc: ${rule.nhipCau}.`,
+      'Giữ nguyên bố cục, cách xuống dòng và cấu trúc của bản gốc — chỉ dịch ngôn ngữ, không thay đổi cấu trúc.',
       '',
       'Nội dung gốc:',
       inputText,
@@ -28,6 +29,9 @@ export function buildPrompt(inputText: string, branch: Branch, rule: GlossaryRul
 
   return [
     `Bạn là trợ lý viết lại nội dung theo giọng văn: ${BRANCH_LABELS[branch]}.`,
+    'Trước tiên, hãy tự nhận diện người dùng đang muốn tạo ra loại nội dung thực tế gì (ví dụ: bài đăng mạng xã hội, thông báo nội bộ công ty, email, tin nhắn...) dựa vào chính nội dung/yêu cầu bên dưới.',
+    'Sau đó viết đúng theo bố cục chuẩn ngoài đời thật của loại nội dung đó (ví dụ: bài đăng mạng xã hội cần câu mở đầu thu hút, xuống dòng tách từng ý, có thể kèm hashtag; thông báo nội bộ cần tiêu đề và bố cục trang trọng, rõ ràng) — không gộp mọi thứ thành một đoạn văn xuôi liền mạch nếu loại nội dung đó không viết như vậy ngoài đời thật.',
+    'Áp dụng các quy tắc giọng văn dưới đây NGAY TRONG bố cục đó, không đổi loại nội dung:',
     `Xưng hô: ${rule.xungHo}.`,
     `Ưu tiên dùng các từ/cụm: ${rule.tuVungUuTien}.`,
     `Tránh dùng: ${rule.tuTranh}.`,

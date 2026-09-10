@@ -37,6 +37,12 @@ describe('buildPrompt', () => {
     expect(prompt).toContain('chốt câu bằng punchline')
   })
 
+  it('với giọng văn thường: dặn AI tự nhận diện loại nội dung và viết đúng bố cục chuẩn', () => {
+    const prompt = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'hai', hai)
+    expect(prompt).toContain('nhận diện')
+    expect(prompt).toContain('bố cục chuẩn')
+  })
+
   it('với nhánh dich_anh: dùng câu lệnh dịch sang tiếng Anh', () => {
     const prompt = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'dich_anh', dichAnh)
     expect(prompt).toContain('dịch sang tiếng Anh')
@@ -48,6 +54,11 @@ describe('buildPrompt', () => {
     const prompt = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'dich_hoa', dichHoa)
     expect(prompt).toContain('dịch sang tiếng Hoa')
     expect(prompt).not.toContain('tiếng Anh')
+  })
+
+  it('với bản dịch: dặn AI giữ nguyên bố cục/xuống dòng của bản gốc, chỉ dịch ngôn ngữ', () => {
+    const prompt = buildPrompt('Bản 2.5 ra mắt thứ Sáu.', 'dich_anh', dichAnh)
+    expect(prompt).toContain('Giữ nguyên bố cục')
   })
 })
 
