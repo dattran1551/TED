@@ -10,8 +10,8 @@ beforeEach(() => {
 })
 
 describe('glossary', () => {
-  it('getGlossary trả về 4 dòng mặc định', () => {
-    expect(getGlossary(db)).toHaveLength(4)
+  it('getGlossary trả về 5 dòng mặc định', () => {
+    expect(getGlossary(db)).toHaveLength(5)
   })
 
   it('getGlossaryRule lấy đúng 1 dòng theo branch', () => {

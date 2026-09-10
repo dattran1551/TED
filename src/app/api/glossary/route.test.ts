@@ -15,10 +15,10 @@ function makePutRequest(body: unknown) {
 }
 
 describe('GET /api/glossary', () => {
-  it('trả về 4 dòng mặc định', async () => {
+  it('trả về 5 dòng mặc định', async () => {
     const res = await GET()
     const rules = await res.json()
-    expect(rules).toHaveLength(4)
+    expect(rules).toHaveLength(5)
   })
 })
 
