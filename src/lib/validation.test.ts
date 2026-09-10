@@ -14,23 +14,22 @@ describe('countWords', () => {
 
 describe('validateInput', () => {
   it('báo empty khi chưa nhập gì', () => {
-    const result = validateInput('', { tones: ['hai'], translate: false })
+    const result = validateInput('', { tones: ['hai'] })
     expect(result).toEqual({ valid: false, reason: 'empty' })
   })
 
   it('báo too_long khi vượt quá MAX_WORDS', () => {
     const longText = new Array(MAX_WORDS + 1).fill('từ').join(' ')
-    const result = validateInput(longText, { tones: ['hai'], translate: false })
+    const result = validateInput(longText, { tones: ['hai'] })
     expect(result).toEqual({ valid: false, reason: 'too_long' })
   })
 
-  it('báo no_options khi không chọn giọng văn nào và không bật dịch', () => {
-    const result = validateInput('nội dung mẫu', { tones: [], translate: false })
+  it('báo no_options khi không chọn giọng văn nào', () => {
+    const result = validateInput('nội dung mẫu', { tones: [] })
     expect(result).toEqual({ valid: false, reason: 'no_options' })
   })
 
-  it('hợp lệ khi có text và ít nhất 1 tuỳ chọn', () => {
-    expect(validateInput('nội dung mẫu', { tones: ['hai'], translate: false })).toEqual({ valid: true })
-    expect(validateInput('nội dung mẫu', { tones: [], translate: true })).toEqual({ valid: true })
+  it('hợp lệ khi có text và ít nhất 1 giọng văn', () => {
+    expect(validateInput('nội dung mẫu', { tones: ['hai'] })).toEqual({ valid: true })
   })
 })

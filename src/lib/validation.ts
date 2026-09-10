@@ -17,7 +17,6 @@ export function validateInput(text: string, options: GenerateOptions): Validatio
   const wordCount = countWords(text)
   if (wordCount === 0) return { valid: false, reason: 'empty' }
   if (wordCount > MAX_WORDS) return { valid: false, reason: 'too_long' }
-  const hasAnyOption = options.tones.length > 0 || options.translate
-  if (!hasAnyOption) return { valid: false, reason: 'no_options' }
+  if (options.tones.length === 0) return { valid: false, reason: 'no_options' }
   return { valid: true }
 }
