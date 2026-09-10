@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
-import { getGlossary } from '@/lib/glossary'
 import { createRun, saveOutputResult } from '@/lib/runs'
 import { trackRun } from '@/lib/pendingRuns'
 import { validateInput } from '@/lib/validation'
@@ -36,7 +35,6 @@ export async function POST(request: Request) {
   const branches: Branch[] = [...options.tones]
 
   const run = createRun(db, inputText, options, branches)
-  const glossary = getGlossary(db)
 
   // KHÔNG await: mỗi nhánh tự chạy và tự ghi kết quả của mình vào CSDL. Nhờ
   // vậy màn hình nhận được lượt vừa tạo (mọi nhánh còn 'pending') ngay lập
@@ -44,13 +42,8 @@ export async function POST(request: Request) {
   // xong — thay vì phải chờ nhánh chậm nhất rồi mới hiện tất cả cùng lúc.
   const work = Promise.all(
     run.outputs.map(async (output) => {
-      const rule = glossary.find((g) => g.branch === output.branch)
-      if (!rule) {
-        safeSaveOutputResult(db, output.id, { status: 'error', errorMessage: 'Thiếu bảng thuật ngữ cho nhánh này' })
-        return
-      }
       try {
-        const content = await callQwen(buildPrompt(inputText, output.branch, rule))
+        const content = await callQwen(buildPrompt(inputText, output.branch))
         saveOutputResult(db, output.id, { status: 'success', content })
       } catch (err) {
         safeSaveOutputResult(db, output.id, { status: 'error', errorMessage: (err as Error).message })

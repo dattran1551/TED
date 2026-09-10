@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { createDb, DEFAULT_GLOSSARY } from '@/lib/db'
+import { createDb } from '@/lib/db'
 import { getRun } from '@/lib/runs'
 import { waitForRun } from '@/lib/pendingRuns'
 import { BRANCH_LABELS } from '@/types'
@@ -75,8 +75,6 @@ function makeRequest(body: unknown) {
 const HAI_MARKER = `giọng văn: ${BRANCH_LABELS.hai}`
 const RE_TRUNG_MARKER = `giọng văn: ${BRANCH_LABELS.re_trung}`
 
-const haiDefaultRule = DEFAULT_GLOSSARY.find((r) => r.branch === 'hai')!
-
 // Đợi phần chạy nền của lượt xong rồi đọc lại từ CSDL — route nay trả về ngay
 // khi vừa tạo lượt nên không thể tin vào body của response nữa.
 async function settledRun(runId: number) {
@@ -94,15 +92,6 @@ afterEach(async () => {
   aiControl.gate = null
   aiControl.failMarkers = []
   writeFailure.branch = null
-  // Trả lại ĐÚNG dòng thuật ngữ mặc định đã seed, không phải một dòng rỗng —
-  // dòng rỗng sẽ âm thầm làm hỏng các test chạy sau trong cùng file này.
-  testDb
-    .prepare(
-      `INSERT OR REPLACE INTO glossary_rules
-         (branch, xung_ho, tu_vung_uu_tien, tu_tranh, nhip_cau, emoji)
-       VALUES (@branch, @xungHo, @tuVungUuTien, @tuTranh, @nhipCau, @emoji)`
-    )
-    .run(haiDefaultRule)
 })
 
 describe('POST /api/generate', () => {
@@ -231,45 +220,5 @@ describe('POST /api/generate', () => {
     expect(haiOutput.status).toBe('pending')
     // Nhánh 're_trung' vẫn ghi được trạng thái 'error' của riêng nó bình thường.
     expect(otherOutput.status).toBe('error')
-  })
-
-  it('lỗi ghi DB khi thiếu bảng thuật ngữ không làm hỏng nhánh còn lại', async () => {
-    // Xoá quy tắc thuật ngữ của nhánh 'hai' để route đi vào nhánh "thiếu
-    // glossary" (if (!rule) { safeSaveOutputResult(...) }), rồi giả lập chính
-    // lần ghi đó cũng thất bại.
-    testDb.exec("DELETE FROM glossary_rules WHERE branch = 'hai'")
-    writeFailure.branch = 'hai'
-
-    const res = await POST(
-      makeRequest({ inputText: 'xin chào', options: { tones: ['hai', 're_trung'] } })
-    )
-    expect(res.status).toBe(200)
-    const created = await res.json()
-    const run = await settledRun(created.id)
-    expect(run.outputs).toHaveLength(2)
-
-    const haiOutput = run.outputs.find((o) => o.branch === 'hai')!
-    const otherOutput = run.outputs.find((o) => o.branch === 're_trung')!
-
-    // Ghi lỗi "thiếu thuật ngữ" cho nhánh 'hai' bị nuốt nên nó vẫn còn 'pending'.
-    expect(haiOutput.status).toBe('pending')
-    // Nhánh 're_trung' (có đủ thuật ngữ) vẫn chạy và ghi thành công bình thường.
-    expect(otherOutput.status).toBe('success')
-  })
-
-  it('thiếu bảng thuật ngữ (ghi được) thì nhánh đó báo lỗi rõ ràng, nhánh kia vẫn xong', async () => {
-    testDb.exec("DELETE FROM glossary_rules WHERE branch = 'hai'")
-
-    const res = await POST(
-      makeRequest({ inputText: 'xin chào', options: { tones: ['hai', 're_trung'] } })
-    )
-    const created = await res.json()
-    const run = await settledRun(created.id)
-
-    const haiOutput = run.outputs.find((o) => o.branch === 'hai')!
-    const otherOutput = run.outputs.find((o) => o.branch === 're_trung')!
-    expect(haiOutput.status).toBe('error')
-    expect(haiOutput.errorMessage).toBe('Thiếu bảng thuật ngữ cho nhánh này')
-    expect(otherOutput.status).toBe('success')
   })
 })
