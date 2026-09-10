@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
-import { getGlossary } from '@/lib/glossary'
 import { getRun, addOutput, saveOutputResult } from '@/lib/runs'
 import { buildPrompt } from '@/lib/promptBuilder'
 import { callQwen } from '@/lib/qwenClient'
@@ -27,11 +26,6 @@ export async function POST(request: Request) {
   if (!source || source.status !== 'success') {
     return NextResponse.json({ error: 'source_not_ready' }, { status: 400 })
   }
-  const glossary = getGlossary(db)
-  const rule = glossary.find((g) => g.branch === targetBranch)
-  if (!rule) {
-    return NextResponse.json({ error: 'glossary_missing' }, { status: 400 })
-  }
 
   const sourceText = source.editedContent ?? source.content ?? ''
 
@@ -41,7 +35,7 @@ export async function POST(request: Request) {
   const output = existing ?? addOutput(db, runId, targetBranch, sourceOutputId)
 
   try {
-    const content = await callQwen(buildPrompt(sourceText, targetBranch, rule))
+    const content = await callQwen(buildPrompt(sourceText, targetBranch))
     saveOutputResult(db, output.id, { status: 'success', content })
   } catch (err) {
     saveOutputResult(db, output.id, { status: 'error', errorMessage: (err as Error).message })
