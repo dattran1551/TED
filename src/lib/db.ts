@@ -29,7 +29,15 @@ export const DEFAULT_GLOSSARY: GlossaryRule[] = [
     emoji: 'emoji có chọn lọc',
   },
   {
-    branch: 'viet_anh',
+    branch: 'dich_anh',
+    xungHo: 'giữ theo bản gốc',
+    tuVungUuTien: 'PvP, skin, buff/nerf',
+    tuTranh: 'dịch nghĩa đen thuật ngữ game',
+    nhipCau: 'giữ thứ tự thông tin gốc',
+    emoji: 'giữ theo bản gốc',
+  },
+  {
+    branch: 'dich_hoa',
     xungHo: 'giữ theo bản gốc',
     tuVungUuTien: 'PvP, skin, buff/nerf',
     tuTranh: 'dịch nghĩa đen thuật ngữ game',
@@ -38,17 +46,28 @@ export const DEFAULT_GLOSSARY: GlossaryRule[] = [
   },
 ]
 
-function seedDefaultGlossary(db: Database.Database) {
-  const { c } = db.prepare('SELECT COUNT(*) as c FROM glossary_rules').get() as { c: number }
-  if (c > 0) return
+function migrateRunOutputsSchema(db: Database.Database) {
+  const columns = db.prepare('PRAGMA table_info(run_outputs)').all() as { name: string }[]
+  const hasSourceOutputId = columns.some((c) => c.name === 'source_output_id')
+  if (!hasSourceOutputId) {
+    db.exec('ALTER TABLE run_outputs ADD COLUMN source_output_id INTEGER REFERENCES run_outputs(id)')
+  }
+}
+
+// Chèn các nhánh còn thiếu (dùng cả lúc tạo mới lẫn lúc mở lại 1 file CSDL cũ
+// từ trước khi có dich_anh/dich_hoa), và dọn hàng 'viet_anh' đã lỗi thời.
+function backfillGlossaryBranches(db: Database.Database) {
+  const existingBranches = new Set(
+    (db.prepare('SELECT branch FROM glossary_rules').all() as { branch: string }[]).map((r) => r.branch)
+  )
   const insert = db.prepare(`
     INSERT INTO glossary_rules (branch, xung_ho, tu_vung_uu_tien, tu_tranh, nhip_cau, emoji)
     VALUES (@branch, @xungHo, @tuVungUuTien, @tuTranh, @nhipCau, @emoji)
   `)
-  const insertMany = db.transaction((rules: GlossaryRule[]) => {
-    for (const rule of rules) insert.run(rule)
-  })
-  insertMany(DEFAULT_GLOSSARY)
+  for (const rule of DEFAULT_GLOSSARY) {
+    if (!existingBranches.has(rule.branch)) insert.run(rule)
+  }
+  db.prepare("DELETE FROM glossary_rules WHERE branch = 'viet_anh'").run()
 }
 
 export function createDb(dbPath: string): Database.Database {
@@ -82,10 +101,12 @@ export function createDb(dbPath: string): Database.Database {
       status TEXT NOT NULL DEFAULT 'pending',
       error_message TEXT,
       edited_content TEXT,
-      regenerate_note TEXT
+      regenerate_note TEXT,
+      source_output_id INTEGER REFERENCES run_outputs(id)
     );
   `)
-  seedDefaultGlossary(db)
+  migrateRunOutputsSchema(db)
+  backfillGlossaryBranches(db)
   return db
 }
 
