@@ -365,11 +365,6 @@ fieldset {
   flex-wrap: wrap;
 }
 
-.status {
-  color: var(--tone-dich-anh);
-  font-size: 0.9rem;
-}
-
 /* -------------------------------- Buttons ------------------------------ */
 .btn {
   display: inline-flex;
@@ -524,62 +519,6 @@ fieldset {
 
 .result-card-note .input {
   flex: 1 1 12rem;
-}
-
-/* ------------------------------ Glossary page --------------------------- */
-.glossary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-4);
-}
-
-.glossary-card {
-  --accent: var(--ink-faint);
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-top: 3px solid var(--accent);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  box-shadow: var(--shadow-card);
-}
-
-.glossary-card[data-branch="chuyen_nghiep"] {
-  --accent: var(--tone-chuyen-nghiep);
-}
-.glossary-card[data-branch="re_trung"] {
-  --accent: var(--tone-re-trung);
-}
-.glossary-card[data-branch="hai"] {
-  --accent: var(--tone-hai);
-}
-.glossary-card[data-branch="dich_anh"] {
-  --accent: var(--tone-dich-anh);
-}
-.glossary-card[data-branch="dich_hoa"] {
-  --accent: var(--tone-dich-hoa);
-}
-
-.glossary-card legend {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 1.05rem;
-  margin-bottom: var(--space-1);
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.field-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-faint);
 }
 
 /* ------------------------------- History page ---------------------------- */
