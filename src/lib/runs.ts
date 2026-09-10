@@ -11,6 +11,7 @@ function rowToOutput(row: any): RunOutput {
     errorMessage: row.error_message,
     editedContent: row.edited_content,
     regenerateNote: row.regenerate_note,
+    sourceOutputId: row.source_output_id,
   }
 }
 
@@ -37,11 +38,36 @@ export function createRun(
       errorMessage: null,
       editedContent: null,
       regenerateNote: null,
+      sourceOutputId: null,
     }
   })
 
   const row = db.prepare('SELECT created_at FROM runs WHERE id = ?').get(runId) as { created_at: string }
   return { id: runId, inputText, options, createdAt: row.created_at, outputs }
+}
+
+// Thêm 1 nhánh mới vào 1 lượt đã có sẵn — dùng khi dịch 1 bản đã chọn, vì đó
+// là nhánh phát sinh sau, không có sẵn từ lúc tạo lượt ban đầu.
+export function addOutput(
+  db: Database.Database,
+  runId: number,
+  branch: Branch,
+  sourceOutputId: number | null
+): RunOutput {
+  const info = db
+    .prepare('INSERT INTO run_outputs (run_id, branch, status, source_output_id) VALUES (?, ?, ?, ?)')
+    .run(runId, branch, 'pending', sourceOutputId)
+  return {
+    id: info.lastInsertRowid as number,
+    runId,
+    branch,
+    content: null,
+    status: 'pending',
+    errorMessage: null,
+    editedContent: null,
+    regenerateNote: null,
+    sourceOutputId,
+  }
 }
 
 export function saveOutputResult(

@@ -8,6 +8,7 @@ import {
   saveRegenerateNote,
   getRun,
   listRuns,
+  addOutput,
 } from './runs'
 
 let db: Database.Database
@@ -18,14 +19,14 @@ beforeEach(() => {
 
 describe('runs', () => {
   it('createRun tạo 1 run và đủ output cho từng nhánh, trạng thái pending', () => {
-    const run = createRun(db, 'nội dung mẫu', { tones: ['hai'], translate: true }, ['hai', 'viet_anh'])
+    const run = createRun(db, 'nội dung mẫu', { tones: ['hai', 're_trung'] }, ['hai', 're_trung'])
     expect(run.inputText).toBe('nội dung mẫu')
     expect(run.outputs).toHaveLength(2)
     expect(run.outputs.every((o) => o.status === 'pending')).toBe(true)
   })
 
   it('saveOutputResult cập nhật đúng 1 output, không đụng output khác', () => {
-    const run = createRun(db, 'nội dung mẫu', { tones: ['hai'], translate: true }, ['hai', 'viet_anh'])
+    const run = createRun(db, 'nội dung mẫu', { tones: ['hai', 're_trung'] }, ['hai', 're_trung'])
     const [first, second] = run.outputs
     saveOutputResult(db, first.id, { status: 'success', content: 'bản hài' })
     saveOutputResult(db, second.id, { status: 'error', errorMessage: 'lỗi mạng' })
@@ -38,7 +39,7 @@ describe('runs', () => {
   })
 
   it('saveOutputResult xoá bản sửa tay cũ — kết quả sinh lại thay thế bản đã sửa', () => {
-    const run = createRun(db, 'nội dung mẫu', { tones: ['hai'], translate: false }, ['hai'])
+    const run = createRun(db, 'nội dung mẫu', { tones: ['hai'] }, ['hai'])
     const output = run.outputs[0]
     saveOutputResult(db, output.id, { status: 'success', content: 'bản hài lần 1' })
     saveEditedContent(db, output.id, 'bản sửa tay của người dùng')
@@ -53,7 +54,7 @@ describe('runs', () => {
   })
 
   it('saveEditedContent và saveRegenerateNote ghi đúng cột', () => {
-    const run = createRun(db, 'nội dung mẫu', { tones: ['hai'], translate: false }, ['hai'])
+    const run = createRun(db, 'nội dung mẫu', { tones: ['hai'] }, ['hai'])
     const output = run.outputs[0]
     saveEditedContent(db, output.id, 'bản đã sửa tay')
     saveRegenerateNote(db, output.id, 'hài hơn nữa')
@@ -64,8 +65,8 @@ describe('runs', () => {
   })
 
   it('listRuns trả về run mới nhất trước', () => {
-    createRun(db, 'run 1', { tones: ['hai'], translate: false }, ['hai'])
-    createRun(db, 'run 2', { tones: ['hai'], translate: false }, ['hai'])
+    createRun(db, 'run 1', { tones: ['hai'] }, ['hai'])
+    createRun(db, 'run 2', { tones: ['hai'] }, ['hai'])
 
     const runs = listRuns(db)
     expect(runs).toHaveLength(2)
@@ -74,5 +75,21 @@ describe('runs', () => {
 
   it('listRuns trả về mảng rỗng khi chưa có lượt nào', () => {
     expect(listRuns(db)).toEqual([])
+  })
+
+  it('addOutput thêm 1 nhánh mới vào lượt đã có, kèm sourceOutputId', () => {
+    const run = createRun(db, 'nội dung mẫu', { tones: ['hai'] }, ['hai'])
+    const source = run.outputs[0]
+    saveOutputResult(db, source.id, { status: 'success', content: 'bản hài gốc' })
+
+    const newOutput = addOutput(db, run.id, 'dich_anh', source.id)
+    expect(newOutput.branch).toBe('dich_anh')
+    expect(newOutput.sourceOutputId).toBe(source.id)
+    expect(newOutput.status).toBe('pending')
+
+    const updated = getRun(db, run.id)!
+    expect(updated.outputs).toHaveLength(2)
+    const found = updated.outputs.find((o) => o.id === newOutput.id)!
+    expect(found.sourceOutputId).toBe(source.id)
   })
 })
