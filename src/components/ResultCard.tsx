@@ -15,14 +15,18 @@ export function ResultCard({
   onTranslate,
 }: {
   output: RunOutput
-  onRegenerate: (note: string) => void
+  onRegenerate: (note: string) => Promise<void>
   onSaveEdit: (text: string) => void
-  onTranslate: (targetBranch: TranslateTarget) => void
+  onTranslate: (targetBranch: TranslateTarget) => Promise<void>
 }) {
   const [note, setNote] = useState('')
   const [editing, setEditing] = useState(false)
   const [editedText, setEditedText] = useState(output.editedContent ?? output.content ?? '')
   const [chosen, setChosen] = useState(false)
+  // AI trả lời có lúc mất tới cả phút — không có 2 dòng trạng thái này thì
+  // nút bấm xong đứng yên, trông y hệt như bị hỏng.
+  const [regenerating, setRegenerating] = useState(false)
+  const [translatingTarget, setTranslatingTarget] = useState<TranslateTarget | null>(null)
 
   useEffect(() => {
     if (!editing) {
@@ -31,6 +35,24 @@ export function ResultCard({
   }, [output.content, output.editedContent, editing])
 
   const canTranslate = TONE_BRANCHES.has(output.branch)
+
+  async function handleRegenerateClick(noteToSend: string) {
+    setRegenerating(true)
+    try {
+      await onRegenerate(noteToSend)
+    } finally {
+      setRegenerating(false)
+    }
+  }
+
+  async function handleTranslateClick(target: TranslateTarget) {
+    setTranslatingTarget(target)
+    try {
+      await onTranslate(target)
+    } finally {
+      setTranslatingTarget(null)
+    }
+  }
 
   return (
     <div className="result-card" data-branch={output.branch}>
@@ -44,8 +66,12 @@ export function ResultCard({
       {output.status === 'error' && (
         <div className="result-card-error" role="alert">
           <p>Không tạo được bản này: {output.errorMessage ?? 'Lỗi không rõ.'}</p>
-          <button className="btn btn-ghost" onClick={() => onRegenerate('')}>
-            Thử lại
+          <button
+            className="btn btn-ghost"
+            onClick={() => handleRegenerateClick('')}
+            disabled={regenerating}
+          >
+            {regenerating ? 'Đang thử lại...' : 'Thử lại'}
           </button>
         </div>
       )}
@@ -85,9 +111,14 @@ export function ResultCard({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Ghi chú điều chỉnh (vd: hài hơn, ngắn câu lại)"
+            disabled={regenerating}
           />
-          <button className="btn btn-ghost btn-sm" onClick={() => onRegenerate(note)}>
-            Ghi chú, tạo lại
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => handleRegenerateClick(note)}
+            disabled={regenerating}
+          >
+            {regenerating ? 'Đang tạo lại...' : 'Ghi chú, tạo lại'}
           </button>
         </div>
       )}
@@ -103,16 +134,18 @@ export function ResultCard({
           <button
             className="btn btn-sm translate-btn"
             data-target="dich_anh"
-            onClick={() => onTranslate('dich_anh')}
+            onClick={() => handleTranslateClick('dich_anh')}
+            disabled={translatingTarget !== null}
           >
-            Dịch sang Tiếng Anh
+            {translatingTarget === 'dich_anh' ? 'Đang dịch...' : 'Dịch sang Tiếng Anh'}
           </button>
           <button
             className="btn btn-sm translate-btn"
             data-target="dich_hoa"
-            onClick={() => onTranslate('dich_hoa')}
+            onClick={() => handleTranslateClick('dich_hoa')}
+            disabled={translatingTarget !== null}
           >
-            Dịch sang Tiếng Hoa
+            {translatingTarget === 'dich_hoa' ? 'Đang dịch...' : 'Dịch sang Tiếng Hoa'}
           </button>
         </div>
       )}
