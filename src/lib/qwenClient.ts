@@ -21,7 +21,7 @@ export async function callQwen(prompt: string): Promise<string> {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'qwen3',
+        model: process.env.GREENNODE_MODEL || 'qwen/qwen3.7-plus',
         messages: [{ role: 'user', content: prompt }],
       }),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),

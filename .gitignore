@@ -29,3 +29,6 @@ venv/
 
 # Data
 /data
+
+# Chỗ để tạm API key thật (chứa .env thật + ảnh không liên quan) — không bao giờ commit
+/API key - Greennode
