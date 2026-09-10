@@ -1,5 +1,6 @@
 export type Tone = 'chuyen_nghiep' | 're_trung' | 'hai'
-export type Branch = Tone | 'viet_anh'
+export type TranslateTarget = 'dich_anh' | 'dich_hoa'
+export type Branch = Tone | TranslateTarget
 
 // Tên tiếng Việt của từng nhánh — dùng chung cho giao diện lẫn prompt gửi model,
 // để không nơi nào phải tự lặp lại bảng nhãn này.
@@ -7,7 +8,8 @@ export const BRANCH_LABELS: Record<Branch, string> = {
   chuyen_nghiep: 'Chuyên nghiệp',
   re_trung: 'Trẻ trung',
   hai: 'Hài',
-  viet_anh: 'Việt ↔ Anh',
+  dich_anh: 'Tiếng Anh',
+  dich_hoa: 'Tiếng Hoa',
 }
 
 export interface GlossaryRule {
@@ -21,7 +23,6 @@ export interface GlossaryRule {
 
 export interface GenerateOptions {
   tones: Tone[]
-  translate: boolean
 }
 
 export interface RunOutput {
@@ -33,6 +34,7 @@ export interface RunOutput {
   errorMessage: string | null
   editedContent: string | null
   regenerateNote: string | null
+  sourceOutputId: number | null
 }
 
 export interface Run {
