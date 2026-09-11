@@ -14,6 +14,8 @@ Thumbs.db
 node_modules/
 dist/
 build/
+.next/
+*.tsbuildinfo
 
 # Python
 __pycache__/
@@ -23,3 +25,10 @@ venv/
 
 # Logs
 *.log
+.worktrees/
+
+# Data
+/data
+
+# Chỗ để tạm API key thật (chứa .env thật + ảnh không liên quan) — không bao giờ commit
+/API key - Greennode
