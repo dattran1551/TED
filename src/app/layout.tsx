@@ -3,9 +3,8 @@ import { Nav } from "@/components/Nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Trợ lý viết nội dung",
-  description:
-    "Viết lại nội dung theo nhiều giọng văn và dịch Việt-Anh, dùng Qwen 3.0 qua GreenNode.",
+  title: "TED — Trợ lý viết nội dung",
+  description: "Trò chuyện với TED để viết nội dung theo nhiều giọng văn, dịch được sang tiếng Anh/tiếng Hoa.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

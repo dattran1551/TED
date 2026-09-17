@@ -1,16 +1,13 @@
 # TED — Trợ lý viết nội dung
 
-Dán một đoạn nội dung/yêu cầu vào, chọn giọng văn muốn có (Chuyên nghiệp, Trẻ
-trung, Hài). Ứng dụng gọi AI qua GreenNode cho từng nhánh song song, để AI tự
-quyết định cách viết đúng chất giọng văn đã chọn. Sau khi có kết quả, chọn 1
-bản để dịch tiếp sang Tiếng Anh hoặc Tiếng Hoa. Kết quả hiện thành từng thẻ
-riêng: sửa tay được, ghi chú để tạo lại được, và mọi lượt đều lưu lại trong
-lịch sử.
+Trò chuyện trực tiếp với TED để viết nội dung: mô tả bạn muốn viết gì, TED
+hỏi lại nếu còn thiếu thông tin (loại nội dung, giọng văn, đối tượng đọc,
+độ dài), rồi viết nội dung ngay trong khung chat. Gõ tiếp bằng lời để dịch
+sang tiếng Anh/tiếng Hoa, sửa lại, hoặc viết bài mới — không cần nút bấm
+riêng. Mọi cuộc chat đều được lưu lại, mở lại xem/tiếp tục được bất cứ lúc
+nào.
 
-Hai màn hình:
-
-- `/` — nhập nội dung, xem kết quả, chọn bản để dịch tiếp
-- `/history` — xem lại các lượt đã tạo
+Một màn hình duy nhất: `/` — trò chuyện với TED.
 
 ## Chạy thử trên máy
 
