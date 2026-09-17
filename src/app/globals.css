@@ -210,6 +210,8 @@ h2 {
 /* --------------------------------- Form -------------------------------- */
 .input {
   background: var(--surface-2);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: var(--space-3) var(--space-4);
@@ -300,8 +302,10 @@ h2 {
 .chat-sidebar-item {
   width: 100%;
   text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
+  background: var(--surface-2);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
   display: flex;
@@ -309,6 +313,7 @@ h2 {
   gap: 2px;
   cursor: pointer;
   color: var(--ink-soft);
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .chat-sidebar-item:hover {
@@ -317,7 +322,7 @@ h2 {
 
 .chat-sidebar-item.is-active {
   border-color: var(--vng-orange);
-  background: color-mix(in srgb, var(--vng-orange) 12%, var(--surface));
+  background: color-mix(in srgb, var(--vng-orange) 18%, white 55%);
   color: var(--ink);
 }
 
@@ -335,13 +340,15 @@ h2 {
 
 .chat-main {
   background: var(--surface);
-  border: 1px solid var(--border-soft);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .chat-messages {
@@ -418,6 +425,8 @@ h2 {
 
 .chat-bubble.is-assistant {
   background: var(--surface-2);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--border);
   color: var(--ink);
 }
