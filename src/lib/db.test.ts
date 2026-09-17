@@ -19,6 +19,24 @@ describe('createDb', () => {
     db.close()
   })
 
+  it('tạo thêm 2 bảng chat_conversations và chat_messages', () => {
+    const db = createDb(':memory:')
+    const tables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+      .all()
+      .map((row: any) => row.name)
+    expect(tables).toEqual(expect.arrayContaining(['chat_conversations', 'chat_messages']))
+    db.close()
+  })
+
+  it('chat_messages có đủ cột conversation_id, role, content, created_at', () => {
+    const db = createDb(':memory:')
+    const columns = db.prepare('PRAGMA table_info(chat_messages)').all() as { name: string }[]
+    const names = columns.map((c) => c.name)
+    expect(names).toEqual(expect.arrayContaining(['conversation_id', 'role', 'content', 'created_at']))
+    db.close()
+  })
+
   it('mở lại 1 file CSDL giữa các lần chạy vẫn giữ nguyên dữ liệu đã có', () => {
     const os = require('node:os')
     const path = require('node:path')

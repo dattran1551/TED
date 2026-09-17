@@ -35,6 +35,19 @@ export function createDb(dbPath: string): Database.Database {
       regenerate_note TEXT,
       source_output_id INTEGER REFERENCES run_outputs(id)
     );
+
+    CREATE TABLE IF NOT EXISTS chat_conversations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      conversation_id INTEGER NOT NULL REFERENCES chat_conversations(id),
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `)
   migrateRunOutputsSchema(db)
   return db
