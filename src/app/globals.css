@@ -297,7 +297,7 @@ h2 {
 /* --------------------------------- Chat page ---------------------------- */
 .chat-layout {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 220px minmax(0, 1fr);
   gap: var(--space-4);
   min-height: 60vh;
 }
@@ -356,6 +356,8 @@ h2 {
 }
 
 .chat-main {
+  min-width: 0; /* ô lưới không tự co theo cột 1fr nếu thiếu dòng này — nội
+                   dung bên trong (bong bóng chat) sẽ ép cả lưới giãn rộng ra */
   background: var(--surface);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
@@ -467,4 +469,21 @@ h2 {
 
 .chat-input-row .input {
   flex: 1;
+}
+
+@media (max-width: 640px) {
+  .chat-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .chat-sidebar-list {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .chat-sidebar-item {
+    flex: none;
+    width: 200px;
+  }
 }
