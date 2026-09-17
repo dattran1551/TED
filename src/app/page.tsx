@@ -11,6 +11,24 @@ function parseSqliteUtc(value: string): Date {
   return new Date(value.replace(' ', 'T') + 'Z')
 }
 
+function BotAvatar() {
+  return (
+    <div className="chat-avatar chat-avatar-bot" aria-hidden="true">
+      T
+    </div>
+  )
+}
+
+function UserAvatar() {
+  return (
+    <div className="chat-avatar chat-avatar-user" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+        <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.42 0-8 2.24-8 5v1a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1c0-2.76-3.58-5-8-5Z" />
+      </svg>
+    </div>
+  )
+}
+
 export default function ChatPage() {
   const [conversations, setConversations] = useState<ChatConversationSummary[]>([])
   const [conversationId, setConversationId] = useState<number | null>(null)
@@ -114,7 +132,8 @@ export default function ChatPage() {
   return (
     <main className="page-shell">
       <div className="hero">
-        <h1>Chat</h1>
+        <h1>TED</h1>
+        <p className="hero-sub">Trợ lý viết nội dung của bạn</p>
       </div>
 
       <div className="chat-layout">
@@ -142,14 +161,34 @@ export default function ChatPage() {
         <section className="chat-main">
           <div className="chat-messages">
             {messages.length === 0 && (
-              <div className="chat-bubble is-assistant">{GREETING}</div>
+              <div className="chat-message is-assistant">
+                <BotAvatar />
+                <div className="chat-message-body">
+                  <span className="chat-message-name">TED</span>
+                  <div className="chat-bubble is-assistant">{GREETING}</div>
+                </div>
+              </div>
             )}
             {messages.map((m) => (
-              <div key={m.id} className={m.role === 'user' ? 'chat-bubble is-user' : 'chat-bubble is-assistant'}>
-                {m.content}
+              <div key={m.id} className={m.role === 'user' ? 'chat-message is-user' : 'chat-message is-assistant'}>
+                {m.role === 'user' ? <UserAvatar /> : <BotAvatar />}
+                <div className="chat-message-body">
+                  {m.role === 'assistant' && <span className="chat-message-name">TED</span>}
+                  <div className={m.role === 'user' ? 'chat-bubble is-user' : 'chat-bubble is-assistant'}>
+                    {m.content}
+                  </div>
+                </div>
               </div>
             ))}
-            {sending && <div className="chat-bubble is-assistant chat-bubble-pending">Đang trả lời...</div>}
+            {sending && (
+              <div className="chat-message is-assistant">
+                <BotAvatar />
+                <div className="chat-message-body">
+                  <span className="chat-message-name">TED</span>
+                  <div className="chat-bubble is-assistant chat-bubble-pending">Đang trả lời...</div>
+                </div>
+              </div>
+            )}
             {sendError && (
               <div className="chat-error" role="alert">
                 <p>{sendError}</p>

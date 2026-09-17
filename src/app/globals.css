@@ -704,8 +704,58 @@ fieldset {
   max-height: 60vh;
 }
 
-.chat-bubble {
+.chat-message {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.chat-message.is-user {
+  flex-direction: row-reverse;
+}
+
+.chat-avatar {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-avatar-bot {
+  background: var(--vng-orange);
+  color: var(--vng-black-95);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.chat-avatar-user {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--ink-soft);
+}
+
+.chat-message-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   max-width: 75%;
+}
+
+.chat-message.is-user .chat-message-body {
+  align-items: flex-end;
+}
+
+.chat-message-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-faint);
+  padding-inline: var(--space-1);
+}
+
+.chat-bubble {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   white-space: pre-wrap;
@@ -713,13 +763,11 @@ fieldset {
 }
 
 .chat-bubble.is-user {
-  align-self: flex-end;
   background: var(--vng-orange);
   color: var(--vng-black-95);
 }
 
 .chat-bubble.is-assistant {
-  align-self: flex-start;
   background: var(--surface-2);
   border: 1px solid var(--border);
   color: var(--ink);
