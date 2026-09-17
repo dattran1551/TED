@@ -131,6 +131,17 @@ export default function ChatPage() {
     setMessages(conversation.messages)
   }
 
+  async function handleDeleteConversation(id: number) {
+    if (!confirm('Xoá cuộc chat này? Không thể khôi phục lại.')) return
+    const res = await fetch(`/api/chat/${id}`, { method: 'DELETE' })
+    if (!res.ok) return
+    if (id === conversationId) {
+      setConversationId(null)
+      setMessages([])
+    }
+    loadConversationList()
+  }
+
   return (
     <main className="page-shell">
       <div className="hero">
@@ -145,7 +156,7 @@ export default function ChatPage() {
           </button>
           <ul className="chat-sidebar-list">
             {conversations.map((c) => (
-              <li key={c.id}>
+              <li key={c.id} className="chat-sidebar-row">
                 <button
                   className={c.id === conversationId ? 'chat-sidebar-item is-active' : 'chat-sidebar-item'}
                   onClick={() => handleOpenConversation(c.id)}
@@ -154,6 +165,14 @@ export default function ChatPage() {
                     {parseSqliteUtc(c.createdAt).toLocaleString('vi-VN')}
                   </span>
                   <span className="chat-sidebar-item-preview">{c.preview}</span>
+                </button>
+                <button
+                  className="chat-sidebar-delete"
+                  onClick={() => handleDeleteConversation(c.id)}
+                  aria-label="Xoá cuộc chat này"
+                  title="Xoá cuộc chat này"
+                >
+                  ×
                 </button>
               </li>
             ))}
