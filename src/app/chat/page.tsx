@@ -39,6 +39,20 @@ export default function ChatPage() {
   async function sendMessage(text: string) {
     setSending(true)
     setSendError(null)
+    // Hiện tin nhắn của người dùng ngay lập tức (id âm để không trùng id thật
+    // từ CSDL) — chờ AI trả lời có khi mất cả chục giây, không hiện ngay thì
+    // trông như tin nhắn không được gửi đi. Khi có phản hồi thật, state này bị
+    // thay thế hoàn toàn bởi dữ liệu từ server nên không lo trùng/lệch.
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: -Date.now(),
+        conversationId: conversationId ?? -1,
+        role: 'user',
+        content: text,
+        createdAt: new Date().toISOString(),
+      },
+    ])
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
