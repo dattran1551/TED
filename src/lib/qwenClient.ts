@@ -4,7 +4,14 @@ export class QwenCallError extends Error {}
 // không làm màn hình đứng mãi ở "Đang tạo...".
 const REQUEST_TIMEOUT_MS = 60_000
 
-export async function callQwen(prompt: string): Promise<string> {
+export type ChatCompletionRole = 'system' | 'user' | 'assistant'
+
+export interface ChatCompletionMessage {
+  role: ChatCompletionRole
+  content: string
+}
+
+export async function callQwenMessages(messages: ChatCompletionMessage[]): Promise<string> {
   const baseUrl = process.env.GREENNODE_BASE_URL || ''
   const apiKey = process.env.GREENNODE_API_KEY || ''
 
@@ -22,7 +29,7 @@ export async function callQwen(prompt: string): Promise<string> {
       },
       body: JSON.stringify({
         model: process.env.GREENNODE_MODEL || 'z-ai/glm-5.3-flash-thirdparty',
-        messages: [{ role: 'user', content: prompt }],
+        messages,
       }),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     })
@@ -43,4 +50,10 @@ export async function callQwen(prompt: string): Promise<string> {
     throw new QwenCallError('GreenNode trả về dữ liệu không đúng định dạng mong đợi')
   }
   return content
+}
+
+// Tiện ích cho các chỗ chỉ cần gửi đúng 1 câu (generate/regenerate/translate) —
+// giữ nguyên chữ ký cũ để không phải sửa gì ở những nơi đang gọi hàm này.
+export async function callQwen(prompt: string): Promise<string> {
+  return callQwenMessages([{ role: 'user', content: prompt }])
 }
