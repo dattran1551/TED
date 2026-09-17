@@ -51,9 +51,3 @@ export async function callQwenMessages(messages: ChatCompletionMessage[]): Promi
   }
   return content
 }
-
-// Tiện ích cho các chỗ chỉ cần gửi đúng 1 câu (generate/regenerate/translate) —
-// giữ nguyên chữ ký cũ để không phải sửa gì ở những nơi đang gọi hàm này.
-export async function callQwen(prompt: string): Promise<string> {
-  return callQwenMessages([{ role: 'user', content: prompt }])
-}
