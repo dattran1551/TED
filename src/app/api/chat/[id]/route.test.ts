@@ -9,7 +9,7 @@ vi.mock('@/lib/db', async (importOriginal) => {
   return { ...actual, getDb: () => testDb }
 })
 
-import { GET } from './route'
+import { GET, DELETE } from './route'
 
 function makeRequest(id: string) {
   return new Request(`http://localhost/api/chat/${id}`)
@@ -42,5 +42,23 @@ describe('GET /api/chat/[id]', () => {
     expect(res.status).toBe(200)
     const conv = await res.json()
     expect(conv.messages.map((m: any) => m.content)).toEqual(['câu 1', 'câu 2'])
+  })
+})
+
+describe('DELETE /api/chat/[id]', () => {
+  it('trả 404 khi không có cuộc chat nào mang id đó', async () => {
+    const res = await DELETE(makeRequest('9999'), makeParams('9999'))
+    expect(res.status).toBe(404)
+  })
+
+  it('xoá thành công, GET lại trả 404', async () => {
+    const convId = createConversation(testDb)
+    addMessage(testDb, convId, 'user', 'câu 1')
+
+    const res = await DELETE(makeRequest(String(convId)), makeParams(String(convId)))
+    expect(res.status).toBe(200)
+
+    const getRes = await GET(makeRequest(String(convId)), makeParams(String(convId)))
+    expect(getRes.status).toBe(404)
   })
 })
