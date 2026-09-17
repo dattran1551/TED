@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import Database from 'better-sqlite3'
 import { createDb } from './db'
-import { createConversation, addMessage, getConversation, listConversations } from './chat'
+import { createConversation, addMessage, getConversation, listConversations, deleteConversation } from './chat'
 
 let db: Database.Database
 
@@ -61,5 +61,31 @@ describe('chat', () => {
     const convId = createConversation(db)
     const list = listConversations(db)
     expect(list).toEqual([{ id: convId, createdAt: expect.any(String), preview: '(chưa có tin nhắn)' }])
+  })
+
+  it('deleteConversation xoá cả cuộc chat lẫn toàn bộ tin nhắn của nó', () => {
+    const convId = createConversation(db)
+    addMessage(db, convId, 'user', 'câu 1')
+    addMessage(db, convId, 'assistant', 'câu 2')
+
+    deleteConversation(db, convId)
+
+    expect(getConversation(db, convId)).toBeUndefined()
+    const remainingMessages = db
+      .prepare('SELECT COUNT(*) as c FROM chat_messages WHERE conversation_id = ?')
+      .get(convId) as { c: number }
+    expect(remainingMessages.c).toBe(0)
+  })
+
+  it('deleteConversation không xoá nhầm cuộc chat khác', () => {
+    const convA = createConversation(db)
+    addMessage(db, convA, 'user', 'của A')
+    const convB = createConversation(db)
+    addMessage(db, convB, 'user', 'của B')
+
+    deleteConversation(db, convA)
+
+    expect(getConversation(db, convA)).toBeUndefined()
+    expect(getConversation(db, convB)).toMatchObject({ id: convB })
   })
 })

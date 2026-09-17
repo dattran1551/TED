@@ -68,3 +68,8 @@ export function listConversations(db: Database.Database, limit = 50): ChatConver
     }
   })
 }
+
+export function deleteConversation(db: Database.Database, conversationId: number): void {
+  db.prepare('DELETE FROM chat_messages WHERE conversation_id = ?').run(conversationId)
+  db.prepare('DELETE FROM chat_conversations WHERE id = ?').run(conversationId)
+}
