@@ -13,9 +13,11 @@ function parseSqliteUtc(value: string): Date {
 
 function BotAvatar() {
   return (
-    <div className="chat-avatar chat-avatar-bot" aria-hidden="true">
-      T
-    </div>
+    <img
+      src="/Ted%20pics/Profile%20icon.png"
+      alt="TED"
+      className="chat-avatar chat-avatar-bot"
+    />
   )
 }
 
@@ -132,8 +134,8 @@ export default function ChatPage() {
   return (
     <main className="page-shell">
       <div className="hero">
-        <h1>TED</h1>
-        <p className="hero-sub">Trợ lý viết nội dung của bạn</p>
+        <h1>Xin chào! Mình là Ted - Trợ lý viết nội dung thông minh</h1>
+        <img src="/Ted%20pics/Full%20body.png" alt="TED" className="hero-mascot" />
       </div>
 
       <div className="chat-layout">

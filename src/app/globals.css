@@ -142,9 +142,11 @@ h3 {
 }
 
 h1 {
-  font-size: clamp(2.5rem, 6vw, 3.75rem);
-  line-height: 1.02;
-  text-transform: uppercase;
+  font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+  line-height: 1.25;
+  text-transform: none;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 h2 {
@@ -198,13 +200,28 @@ h2 {
 
 .hero {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
 }
 
-.hero-sub {
-  color: var(--ink-faint);
-  max-width: 46ch;
+.hero-mascot {
+  flex: none;
+  height: 180px;
+  width: auto;
+}
+
+@media (max-width: 640px) {
+  .hero {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .hero-mascot {
+    height: 120px;
+  }
 }
 
 /* --------------------------------- Form -------------------------------- */
@@ -378,13 +395,11 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .chat-avatar-bot {
-  background: var(--vng-orange);
-  color: var(--vng-black-95);
-  font-family: var(--font-display);
-  font-size: 1.1rem;
+  object-fit: cover;
 }
 
 .chat-avatar-user {
