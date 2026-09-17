@@ -625,3 +625,125 @@ fieldset {
   background: color-mix(in srgb, var(--tone-dich-hoa) 18%, var(--surface-2));
   color: var(--ink);
 }
+
+/* --------------------------------- Chat page ---------------------------- */
+.chat-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: var(--space-4);
+  min-height: 60vh;
+}
+
+.chat-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.chat-sidebar-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow-y: auto;
+}
+
+.chat-sidebar-item {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+
+.chat-sidebar-item:hover {
+  border-color: var(--vng-orange);
+}
+
+.chat-sidebar-item.is-active {
+  border-color: var(--vng-orange);
+  background: color-mix(in srgb, var(--vng-orange) 12%, var(--surface));
+  color: var(--ink);
+}
+
+.chat-sidebar-item-date {
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+}
+
+.chat-sidebar-item-preview {
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-main {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  box-shadow: var(--shadow-card);
+}
+
+.chat-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.chat-bubble {
+  max-width: 75%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.chat-bubble.is-user {
+  align-self: flex-end;
+  background: var(--vng-orange);
+  color: var(--vng-black-95);
+}
+
+.chat-bubble.is-assistant {
+  align-self: flex-start;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--ink);
+}
+
+.chat-bubble-pending {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.chat-error {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--vng-danger);
+  font-size: 0.9rem;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.chat-input-row .input {
+  flex: 1;
+}
