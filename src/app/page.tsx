@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ChatConversation, ChatConversationSummary, ChatMessage, GeneratedContent } from '@/types'
 import { CONTENT_TYPES, labelOf, type ContentTypeId } from '@/lib/config'
 import { parseContentMarker } from '@/lib/contentMarker'
+import { STREAM_ERROR_MARKER } from '@/lib/chatStreamProtocol'
 import { Composer, type ComposerSubmitValue } from '@/components/Composer'
 import { ContentPackageView } from '@/components/ContentPackageView'
 
@@ -52,6 +53,7 @@ export default function ChatPage() {
   const [packages, setPackages] = useState<Record<number, GeneratedContent>>({})
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [streamingText, setStreamingText] = useState<string | null>(null)
   const [sendError, setSendError] = useState<string | null>(null)
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
   const [composerOpen, setComposerOpen] = useState(false)
@@ -72,11 +74,12 @@ export default function ChatPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, sending, generating])
+  }, [messages, sending, generating, streamingText])
 
   async function sendMessage(text: string) {
     setSending(true)
     setSendError(null)
+    setStreamingText('')
     // Hiện tin nhắn của người dùng ngay lập tức (id âm để không trùng id thật
     // từ CSDL) — chờ AI trả lời có khi mất cả chục giây, không hiện ngay thì
     // trông như tin nhắn không được gửi đi. Khi có phản hồi thật, state này bị
@@ -97,10 +100,12 @@ export default function ChatPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conversationId, message: text }),
       })
-      const data = await res.json()
+
       if (!res.ok) {
-        // Tin nhắn người dùng vẫn được server lưu lại — đồng bộ để không mất
-        // dù câu trả lời của AI bị lỗi.
+        // Lỗi xảy ra TRƯỚC khi kịp bắt đầu stream — vẫn là JSON như cũ. Tin
+        // nhắn người dùng đã được server lưu lại — đồng bộ để không mất dù
+        // câu trả lời của AI bị lỗi.
+        const data = await res.json()
         if (data.conversation) {
           setConversationId(data.conversation.id)
           setMessages(data.conversation.messages)
@@ -110,17 +115,71 @@ export default function ChatPage() {
         setSendError(data.message ?? 'Không nhận được phản hồi, thử lại nhé.')
         return
       }
-      const conversation: ChatConversation = data
-      setConversationId(conversation.id)
-      setMessages(conversation.messages)
-      setPackages(packagesById(conversation))
-      setLastFailedMessage(null)
+
+      // Đọc dần từng đoạn chữ TED trả lời — hiện ngay khi có, không đợi xong
+      // toàn bộ câu trả lời mới thấy gì.
+      const reader = res.body!.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let gotMeta = false
+      let streamConversationId: number | null = null
+      let assistantText = ''
+      let streamErrorMessage: string | null = null
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+
+        if (!gotMeta) {
+          const newlineIdx = buffer.indexOf('\n')
+          if (newlineIdx === -1) continue
+          try {
+            streamConversationId = JSON.parse(buffer.slice(0, newlineIdx)).conversationId
+          } catch {
+            // Không đọc được meta thì thôi — vẫn đồng bộ lại bằng GET ở cuối.
+          }
+          buffer = buffer.slice(newlineIdx + 1)
+          gotMeta = true
+        }
+
+        const errorIdx = buffer.indexOf(STREAM_ERROR_MARKER)
+        if (errorIdx !== -1) {
+          assistantText += buffer.slice(0, errorIdx)
+          streamErrorMessage = buffer.slice(errorIdx + STREAM_ERROR_MARKER.length)
+        } else {
+          assistantText += buffer
+        }
+        buffer = ''
+        setStreamingText(assistantText)
+      }
+
+      // Đồng bộ lại từ server để lấy đúng id/thời gian thật thay vì chỉ dùng
+      // chữ đã ghép được ở client.
+      const finalConversationId = streamConversationId ?? conversationId
+      if (finalConversationId) {
+        const convRes = await fetch(`/api/chat/${finalConversationId}`)
+        if (convRes.ok) {
+          const conversation: ChatConversation = await convRes.json()
+          setConversationId(conversation.id)
+          setMessages(conversation.messages)
+          setPackages(packagesById(conversation))
+        }
+      }
+
+      if (streamErrorMessage) {
+        setLastFailedMessage(text)
+        setSendError(streamErrorMessage)
+      } else {
+        setLastFailedMessage(null)
+      }
       loadConversationList()
     } catch {
       setLastFailedMessage(text)
       setSendError('Không gửi được, kiểm tra kết nối rồi thử lại.')
     } finally {
       setSending(false)
+      setStreamingText(null)
     }
   }
 
@@ -311,14 +370,23 @@ export default function ChatPage() {
                 </div>
               )
             })}
-            {(sending || generating) && (
+            {sending && (
               <div className="chat-message is-assistant">
                 <BotAvatar />
                 <div className="chat-message-body">
                   <span className="chat-message-name">TED</span>
-                  <div className="chat-bubble is-assistant chat-bubble-pending">
-                    {generating ? 'TED đang tạo nội dung...' : 'Đang trả lời...'}
+                  <div className={streamingText ? 'chat-bubble is-assistant' : 'chat-bubble is-assistant chat-bubble-pending'}>
+                    {streamingText || 'Đang trả lời...'}
                   </div>
+                </div>
+              </div>
+            )}
+            {generating && (
+              <div className="chat-message is-assistant">
+                <BotAvatar />
+                <div className="chat-message-body">
+                  <span className="chat-message-name">TED</span>
+                  <div className="chat-bubble is-assistant chat-bubble-pending">TED đang tạo nội dung...</div>
                 </div>
               </div>
             )}

@@ -105,3 +105,112 @@ describe('callQwenMessages', () => {
     expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal)
   })
 })
+
+function makeSseResponse(rawChunks: string[]) {
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const chunk of rawChunks) controller.enqueue(encoder.encode(chunk))
+      controller.close()
+    },
+  })
+  return { ok: true, body: stream }
+}
+
+async function collect(gen: AsyncGenerator<string>): Promise<string> {
+  const pieces: string[] = []
+  for await (const piece of gen) pieces.push(piece)
+  return pieces.join('')
+}
+
+describe('streamQwenMessages', () => {
+  const originalFetch = global.fetch
+
+  beforeEach(() => {
+    process.env.GREENNODE_BASE_URL = 'https://fake-greennode.test/v1'
+    process.env.GREENNODE_API_KEY = 'fake-key'
+  })
+
+  afterEach(() => {
+    global.fetch = originalFetch
+    vi.resetModules()
+  })
+
+  it('chỉ trả về phần "content", bỏ qua phần "suy nghĩ" (reasoning_content)', async () => {
+    const sse = [
+      'data: {"choices":[{"delta":{"reasoning_content":"đang suy nghĩ..."}}]}\n\n',
+      'data: {"choices":[{"delta":{"content":"Xin"}}]}\n\n',
+      'data: {"choices":[{"delta":{"content":" chào"}}]}\n\n',
+      'data: [DONE]\n\n',
+    ]
+    global.fetch = vi.fn().mockResolvedValue(makeSseResponse(sse)) as any
+
+    const { streamQwenMessages } = await import('./qwenClient')
+    const result = await collect(streamQwenMessages([{ role: 'user', content: 'x' }]))
+    expect(result).toBe('Xin chào')
+  })
+
+  it('ghép đúng dữ liệu dù mạng chia nhỏ 1 khối SSE thành nhiều lần nhận', async () => {
+    const full = 'data: {"choices":[{"delta":{"content":"Xin chào"}}]}\n\ndata: [DONE]\n\n'
+    const mid = Math.floor(full.length / 2)
+    global.fetch = vi.fn().mockResolvedValue(makeSseResponse([full.slice(0, mid), full.slice(mid)])) as any
+
+    const { streamQwenMessages } = await import('./qwenClient')
+    const result = await collect(streamQwenMessages([{ role: 'user', content: 'x' }]))
+    expect(result).toBe('Xin chào')
+  })
+
+  it('bỏ qua 1 dòng JSON hỏng giữa stream, không làm crash toàn bộ', async () => {
+    const sse = [
+      'data: {hỏng không phải JSON}\n\n',
+      'data: {"choices":[{"delta":{"content":"vẫn ổn"}}]}\n\n',
+      'data: [DONE]\n\n',
+    ]
+    global.fetch = vi.fn().mockResolvedValue(makeSseResponse(sse)) as any
+
+    const { streamQwenMessages } = await import('./qwenClient')
+    const result = await collect(streamQwenMessages([{ role: 'user', content: 'x' }]))
+    expect(result).toBe('vẫn ổn')
+  })
+
+  it('gửi stream:true trong body khi gọi streamQwenMessages', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(makeSseResponse(['data: [DONE]\n\n']))
+    global.fetch = fetchMock as any
+
+    const { streamQwenMessages } = await import('./qwenClient')
+    await collect(streamQwenMessages([{ role: 'user', content: 'x' }]))
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(body.stream).toBe(true)
+  })
+
+  it('ném QwenCallError khi API trả lỗi HTTP trước khi bắt đầu stream', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 }) as any
+
+    const { streamQwenMessages, QwenCallError } = await import('./qwenClient')
+    await expect(collect(streamQwenMessages([{ role: 'user', content: 'x' }]))).rejects.toBeInstanceOf(
+      QwenCallError
+    )
+  })
+
+  it('ném QwenCallError nếu response không có body để đọc stream', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, body: null }) as any
+
+    const { streamQwenMessages, QwenCallError } = await import('./qwenClient')
+    await expect(collect(streamQwenMessages([{ role: 'user', content: 'x' }]))).rejects.toBeInstanceOf(
+      QwenCallError
+    )
+  })
+
+  it('báo lỗi rõ ràng khi chưa cấu hình GREENNODE_BASE_URL, không gọi fetch', async () => {
+    process.env.GREENNODE_BASE_URL = ''
+    const fetchMock = vi.fn()
+    global.fetch = fetchMock as any
+
+    const { streamQwenMessages, QwenCallError } = await import('./qwenClient')
+    await expect(collect(streamQwenMessages([{ role: 'user', content: 'x' }]))).rejects.toBeInstanceOf(
+      QwenCallError
+    )
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
