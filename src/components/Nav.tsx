@@ -7,6 +7,9 @@ export function Nav() {
         <Link href="/" className="topnav-brand">
           <img src="/vnggames-logo.png" alt="VNGGames" />
         </Link>
+        <Link href="/brand" className="topnav-link">
+          Brand Brain
+        </Link>
       </div>
     </header>
   )

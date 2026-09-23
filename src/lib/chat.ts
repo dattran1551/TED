@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3'
 import type { ChatConversation, ChatConversationSummary, ChatMessage, ChatRole } from '@/types'
+import { listPackagesByConversation } from '@/lib/generatedContent'
 
 function rowToMessage(row: any): ChatMessage {
   return {
@@ -43,10 +44,12 @@ export function getConversation(db: Database.Database, conversationId: number): 
   const messageRows = db
     .prepare('SELECT * FROM chat_messages WHERE conversation_id = ? ORDER BY id')
     .all(conversationId) as any[]
+  const contentPackages = listPackagesByConversation(db, conversationId)
   return {
     id: convRow.id,
     createdAt: convRow.created_at,
     messages: messageRows.map(rowToMessage),
+    ...(contentPackages.length > 0 ? { contentPackages } : {}),
   }
 }
 

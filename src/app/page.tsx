@@ -1,9 +1,17 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { ChatConversation, ChatConversationSummary, ChatMessage } from '@/types'
+import type { ChatConversation, ChatConversationSummary, ChatMessage, GeneratedContent } from '@/types'
+import { CONTENT_TYPES, labelOf, type ContentTypeId } from '@/lib/config'
+import { parseContentMarker } from '@/lib/contentMarker'
+import { Composer, type ComposerSubmitValue } from '@/components/Composer'
+import { ContentPackageView } from '@/components/ContentPackageView'
 
 const GREETING = 'Xin chào bạn! Hôm nay bạn muốn viết nội dung gì? Cứ mô tả ngắn gọn, mình sẽ hỏi thêm nếu cần.'
+
+// Chip "bắt đầu nhanh" ngay dưới headline (mục 11) — bấm vào là mở Composer
+// với sẵn loại nội dung tương ứng, không bắt buộc phải gõ chữ trước.
+const QUICK_START_TYPES: ContentTypeId[] = ['social_post', 'event_recap', 'recruitment', 'email', 'internal_comm']
 
 // SQLite lưu created_at bằng datetime('now'), tức giờ UTC nhưng KHÔNG kèm dấu
 // múi giờ — phải nói rõ đây là UTC thì trình duyệt mới hiện đúng giờ địa phương.
@@ -31,14 +39,24 @@ function UserAvatar() {
   )
 }
 
+function packagesById(conversation: ChatConversation | undefined): Record<number, GeneratedContent> {
+  const map: Record<number, GeneratedContent> = {}
+  for (const pkg of conversation?.contentPackages ?? []) map[pkg.id] = pkg
+  return map
+}
+
 export default function ChatPage() {
   const [conversations, setConversations] = useState<ChatConversationSummary[]>([])
   const [conversationId, setConversationId] = useState<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [packages, setPackages] = useState<Record<number, GeneratedContent>>({})
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
+  const [composerOpen, setComposerOpen] = useState(false)
+  const [composerPreset, setComposerPreset] = useState<ContentTypeId | undefined>(undefined)
+  const [generating, setGenerating] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   function loadConversationList() {
@@ -54,7 +72,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, sending])
+  }, [messages, sending, generating])
 
   async function sendMessage(text: string) {
     setSending(true)
@@ -86,6 +104,7 @@ export default function ChatPage() {
         if (data.conversation) {
           setConversationId(data.conversation.id)
           setMessages(data.conversation.messages)
+          setPackages(packagesById(data.conversation))
         }
         setLastFailedMessage(text)
         setSendError(data.message ?? 'Không nhận được phản hồi, thử lại nhé.')
@@ -94,6 +113,7 @@ export default function ChatPage() {
       const conversation: ChatConversation = data
       setConversationId(conversation.id)
       setMessages(conversation.messages)
+      setPackages(packagesById(conversation))
       setLastFailedMessage(null)
       loadConversationList()
     } catch {
@@ -118,17 +138,21 @@ export default function ChatPage() {
   function handleNewChat() {
     setConversationId(null)
     setMessages([])
+    setPackages({})
     setSendError(null)
     setLastFailedMessage(null)
+    setComposerOpen(false)
   }
 
   async function handleOpenConversation(id: number) {
     setSendError(null)
+    setComposerOpen(false)
     const res = await fetch(`/api/chat/${id}`)
     if (!res.ok) return
     const conversation: ChatConversation = await res.json()
     setConversationId(conversation.id)
     setMessages(conversation.messages)
+    setPackages(packagesById(conversation))
   }
 
   async function handleDeleteConversation(id: number) {
@@ -138,14 +162,84 @@ export default function ChatPage() {
     if (id === conversationId) {
       setConversationId(null)
       setMessages([])
+      setPackages({})
     }
     loadConversationList()
+  }
+
+  function openComposer(preset?: ContentTypeId) {
+    setComposerPreset(preset)
+    setComposerOpen(true)
+    setSendError(null)
+  }
+
+  // Feature #1 → #3: Composer thu thập brief có cấu trúc, gửi sang API sinh
+  // nội dung đa kênh — gói kết quả được gắn vào ĐÚNG cuộc hội thoại đang mở
+  // (hoặc tạo hội thoại mới) để dòng thời gian mạch lạc với chat tự do.
+  async function handleComposerSubmit(value: ComposerSubmitValue) {
+    setGenerating(true)
+    setSendError(null)
+    try {
+      const res = await fetch('/api/content/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          channels: value.channels,
+          brief: {
+            contentType: value.contentType,
+            tones: value.tones,
+            length: value.length,
+            audience: value.audience,
+            keyMessages: value.keyMessages,
+            cta: value.cta,
+            additionalContext: value.additionalContext,
+          },
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        if (data.conversation) {
+          setConversationId(data.conversation.id)
+          setMessages(data.conversation.messages)
+          setPackages(packagesById(data.conversation))
+        }
+        setSendError(data.message ?? 'TED không tạo được nội dung, thử lại nhé.')
+        return
+      }
+      const conversation: ChatConversation = data.conversation
+      setConversationId(conversation.id)
+      setMessages(conversation.messages)
+      setPackages(packagesById(conversation))
+      setComposerOpen(false)
+      loadConversationList()
+    } catch {
+      setSendError('Không gửi được yêu cầu, kiểm tra kết nối rồi thử lại.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  function handlePackageUpdated(pkg: GeneratedContent) {
+    setPackages((prev) => ({ ...prev, [pkg.id]: pkg }))
   }
 
   return (
     <main className="page-shell">
       <div className="hero">
-        <h1>Xin chào! Mình là Ted - Trợ lý viết nội dung thông minh</h1>
+        <div className="hero-text">
+          <h1>Xin chào! Mình là Ted - Trợ lý viết nội dung thông minh</h1>
+          <div className="quick-start-row">
+            {QUICK_START_TYPES.map((typeId) => (
+              <button key={typeId} className="chip" onClick={() => openComposer(typeId)}>
+                {labelOf(CONTENT_TYPES, typeId)}
+              </button>
+            ))}
+            <button className="chip chip-outline" onClick={() => openComposer(undefined)}>
+              Tạo theo Brief
+            </button>
+          </div>
+        </div>
         <img src="/Ted%20pics/Full%20body.png" alt="TED" className="hero-mascot" />
       </div>
 
@@ -181,7 +275,7 @@ export default function ChatPage() {
 
         <section className="chat-main">
           <div className="chat-messages">
-            {messages.length === 0 && (
+            {messages.length === 0 && !composerOpen && (
               <div className="chat-message is-assistant">
                 <BotAvatar />
                 <div className="chat-message-body">
@@ -190,36 +284,65 @@ export default function ChatPage() {
                 </div>
               </div>
             )}
-            {messages.map((m) => (
-              <div key={m.id} className={m.role === 'user' ? 'chat-message is-user' : 'chat-message is-assistant'}>
-                {m.role === 'user' ? <UserAvatar /> : <BotAvatar />}
-                <div className="chat-message-body">
-                  {m.role === 'assistant' && <span className="chat-message-name">TED</span>}
-                  <div className={m.role === 'user' ? 'chat-bubble is-user' : 'chat-bubble is-assistant'}>
-                    {m.content}
+            {messages.map((m) => {
+              const packageId = m.role === 'assistant' ? parseContentMarker(m.content) : null
+              if (packageId !== null) {
+                const pkg = packages[packageId]
+                if (!pkg) return null
+                return (
+                  <div key={m.id} className="chat-message is-assistant">
+                    <BotAvatar />
+                    <div className="chat-message-body chat-message-body-wide">
+                      <span className="chat-message-name">TED</span>
+                      <ContentPackageView package={pkg} onUpdated={handlePackageUpdated} />
+                    </div>
+                  </div>
+                )
+              }
+              return (
+                <div key={m.id} className={m.role === 'user' ? 'chat-message is-user' : 'chat-message is-assistant'}>
+                  {m.role === 'user' ? <UserAvatar /> : <BotAvatar />}
+                  <div className="chat-message-body">
+                    {m.role === 'assistant' && <span className="chat-message-name">TED</span>}
+                    <div className={m.role === 'user' ? 'chat-bubble is-user' : 'chat-bubble is-assistant'}>
+                      {m.content}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            {sending && (
+              )
+            })}
+            {(sending || generating) && (
               <div className="chat-message is-assistant">
                 <BotAvatar />
                 <div className="chat-message-body">
                   <span className="chat-message-name">TED</span>
-                  <div className="chat-bubble is-assistant chat-bubble-pending">Đang trả lời...</div>
+                  <div className="chat-bubble is-assistant chat-bubble-pending">
+                    {generating ? 'TED đang tạo nội dung...' : 'Đang trả lời...'}
+                  </div>
                 </div>
               </div>
             )}
             {sendError && (
               <div className="chat-error" role="alert">
                 <p>{sendError}</p>
-                <button className="btn btn-ghost btn-sm" onClick={handleRetry}>
-                  Thử lại
-                </button>
+                {lastFailedMessage && (
+                  <button className="btn btn-ghost btn-sm" onClick={handleRetry}>
+                    Thử lại
+                  </button>
+                )}
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
+
+          {composerOpen && (
+            <Composer
+              initialContentType={composerPreset}
+              submitting={generating}
+              onSubmit={handleComposerSubmit}
+              onClose={() => setComposerOpen(false)}
+            />
+          )}
 
           <div className="chat-input-row">
             <input
