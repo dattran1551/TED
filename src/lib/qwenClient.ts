@@ -41,6 +41,10 @@ export async function callQwenMessages(
       body: JSON.stringify({
         model: process.env.GREENNODE_MODEL || 'z-ai/glm-5.3-flash-thirdparty',
         messages,
+        // Model có chế độ "suy nghĩ" (reasoning) ngầm trước khi trả lời — tắt
+        // đi giúp trả lời nhanh hơn đáng kể cho tác vụ đơn giản (đo thực tế:
+        // ~44% nhanh hơn), không đổi định dạng response, không tốn thêm phí.
+        chat_template_kwargs: { enable_thinking: false },
       }),
       signal: AbortSignal.timeout(timeoutMs),
     })
